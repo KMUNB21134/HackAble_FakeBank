@@ -290,8 +290,17 @@ def dashboard():
         for row in spending
     ]
 
+    # Points for an SVG line graph, laid out on a 300x100 viewBox.
+    n = len(chart)
+    for i, point in enumerate(chart):
+        point['x'] = round((i / (n - 1)) * 300, 1) if n > 1 else 150
+        point['y'] = round(100 - point['pct'], 1)
+    chart_points = ' '.join('{},{}'.format(p['x'], p['y']) for p in chart)
+
     transfer = flask.request.args.get('transfer') == '1'
-    return flask.render_template('dashboard.html', user=user, chart=chart, transfer=transfer)
+    return flask.render_template(
+        'dashboard.html', user=user, chart=chart, chart_points=chart_points, transfer=transfer
+    )
 
 
 @app.route('/logout')

@@ -12,7 +12,7 @@
 
     </head>
     <body>
-        <div class="card">
+        <div class="card dashboard-card">
             <!-- INTENTIONALLY VULNERABLE: | safe disables Jinja's auto-escaping,
                  so a username containing HTML/JS renders as-is (stored XSS). -->
             <h1>Welcome, {{ user['username'] | safe }}!</h1>
@@ -25,12 +25,19 @@
             {% if chart %}
             <div class="spending-chart">
                 <p class="chart-title">Recent spending</p>
-                <div class="chart-bars">
+                <div class="chart-line-wrap">
+                    <svg viewBox="0 0 300 100" preserveAspectRatio="none" class="chart-line">
+                        <polyline points="{{ chart_points }}" fill="none" stroke="#007bff" stroke-width="2" vector-effect="non-scaling-stroke" />
+                        {% for point in chart %}
+                        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="#007bff">
+                            <title>${{ '%.2f' | format(point.amount) }} on {{ point.date }}</title>
+                        </circle>
+                        {% endfor %}
+                    </svg>
+                </div>
+                <div class="chart-labels">
                     {% for point in chart %}
-                    <div class="chart-bar-wrap">
-                        <div class="chart-bar" data-pct="{{ point.pct }}" title="${{ '%.2f' | format(point.amount) }} on {{ point.date }}"></div>
-                        <span class="chart-label">{{ point.date[5:] }}</span>
-                    </div>
+                    <span class="chart-label">{{ point.date[5:] }}</span>
                     {% endfor %}
                 </div>
             </div>
