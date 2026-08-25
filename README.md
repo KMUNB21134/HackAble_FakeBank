@@ -33,7 +33,7 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 
 ## Features
 
-- **Dashboard spending graph** — the dashboard shows a small bar chart of
+- **Dashboard spending graph** — the dashboard shows a small line graph of
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
