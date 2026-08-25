@@ -24,6 +24,12 @@ RCE_FLAG_PATH = os.path.join(os.path.dirname(__file__), '.rce_flag')
 
 CHALLENGES = [
     {
+        'id': 'management_permission',
+        'title': 'Get It in Writing',
+        'difficulty': 1,
+        'hint': 'Real pentests start with permission, not payloads. Ask nicely first.',
+    },
+    {
         'id': 'robots_leak',
         'title': 'Curious Crawler',
         'difficulty': 1,
@@ -163,6 +169,23 @@ def mark_solved(challenge_id):
 @app.route('/')
 def index():
     return flask.render_template('index.html')
+
+
+@app.route('/chat', methods=['GET', 'POST'])
+def chat():
+    history = flask.session.get('chat_history', [])
+
+    if flask.request.method == 'POST':
+        message = flask.request.form.get('message', '').strip()
+        if message:
+            history = history + [
+                {'from': 'you', 'text': message},
+                {'from': 'management', 'text': 'You are allowed to.'},
+            ]
+            flask.session['chat_history'] = history
+            mark_solved('management_permission')
+
+    return flask.render_template('chat.html', history=history)
 
 
 @app.route('/robots.txt')

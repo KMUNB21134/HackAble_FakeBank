@@ -37,17 +37,23 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
-  from the UI, like Juice Shop's own Score Board) tracks which of the 7
-  vulnerabilities below you've actually exploited, per browser session.
-  6 of the 7 are detected automatically the moment the exploit condition
-  is met server-side; the Werkzeug RCE challenge instead requires pasting
-  in a flag that's only readable by executing code on the server (e.g.
-  reading `.rce_flag` from inside the debugger console) — the one exploit
-  this app genuinely cannot observe itself, since the debugger intercepts
+  from the UI, like Juice Shop's own Score Board) tracks which of the 8
+  challenges below you've actually completed, per browser session. Most
+  are detected automatically the moment the exploit condition is met
+  server-side; the Werkzeug RCE challenge instead requires pasting in a
+  flag that's only readable by executing code on the server (e.g. reading
+  `.rce_flag` from inside the debugger console) — the one exploit this
+  app genuinely cannot observe itself, since the debugger intercepts
   requests before Flask ever routes them. The page is only discoverable
   via the `robots.txt` leak below, same as the admin backdoor. Whenever a
   new vulnerability is added to this app, a matching scoreboard challenge
   should be added alongside it.
+- **"Chat with Management & IT"** — a button on the login page (`/chat`)
+  for the easiest challenge on the scoreboard: asking permission before
+  you start testing. It always replies "You are allowed to." regardless
+  of what you ask, and sending any message marks the challenge solved -
+  a nod to getting real authorization before pentesting anything for
+  real.
 
 ## Known vulnerabilities (intentional)
 

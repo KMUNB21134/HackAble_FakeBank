@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>FakeBank.com - Chat with Management &amp; IT</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    </head>
+    <body>
+        <div class="card chat-card">
+            <h1>Chat with Management &amp; IT</h1>
+
+            <div class="chat-history">
+                {% if not history %}
+                <p class="subtext">Ask if you're allowed to test this site before you start.</p>
+                {% endif %}
+                {% for msg in history %}
+                <p class="chat-msg chat-msg-{{ msg['from'] }}">
+                    <strong>{{ 'You' if msg['from'] == 'you' else 'Management' }}:</strong>
+                    {{ msg['text'] }}
+                </p>
+                {% endfor %}
+            </div>
+
+            <form class="login-form flag-form" method="post">
+                <input type="text" name="message" placeholder="Ask a question" required>
+                <button type="submit">Send</button>
+            </form>
+
+            <p class="subtext"><a href="/">Back to Login</a></p>
+        </div>
+
+        <script src="{{ url_for('static', filename='main.js') }}" async defer></script>
+    </body>
+</html>

@@ -160,6 +160,29 @@ button:hover {
     flex: 1;
 }
 
+.chat-card {
+    max-width: 420px;
+}
+
+.chat-history {
+    text-align: left;
+    margin-bottom: 16px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.chat-msg {
+    font-size: 14px;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: #f4f6f8;
+}
+
+.chat-msg-management {
+    background-color: #e6f0ff;
+}
+
 .spending-chart {
     margin: 8px 0 24px;
     text-align: left;
