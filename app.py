@@ -1,6 +1,8 @@
 import flask
 import hashlib
 import os
+import re
+import secrets
 import sqlite3
 from datetime import datetime
 
@@ -8,6 +10,63 @@ app = flask.Flask(__name__)
 app.secret_key = 'not-a-real-secret'  # fine for a local vuln demo, not for prod
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'fakebank.db')
+
+# Deliberately unlinked - only discoverable via the robots.txt leak, same as
+# the admin backdoor.
+SCOREBOARD_PATH = '/scoreboard93217'
+
+# Only obtainable by actually executing code via the debugger console (see
+# write_rce_flag() below) - this is the one challenge app.py cannot detect
+# server-side, since werkzeug's debugger intercepts __debugger__ requests
+# before Flask ever routes them.
+RCE_FLAG = 'FLAG{d3bug_c0nsole_is_a_full_shell}'
+RCE_FLAG_PATH = os.path.join(os.path.dirname(__file__), '.rce_flag')
+
+CHALLENGES = [
+    {
+        'id': 'robots_leak',
+        'title': 'Curious Crawler',
+        'difficulty': 1,
+        'hint': 'Servers publish files by default that most people never bother to check.',
+    },
+    {
+        'id': 'sqli_login_bypass',
+        'title': 'Login Without a Password',
+        'difficulty': 2,
+        'hint': 'The login form trusts what you type more than it should.',
+    },
+    {
+        'id': 'weak_hashing',
+        'title': 'Crack the Vault',
+        'difficulty': 2,
+        'hint': 'Not every hash needs the front door. Some can be reversed offline.',
+    },
+    {
+        'id': 'stored_xss',
+        'title': 'Make Yourself at Home',
+        'difficulty': 2,
+        'hint': 'Something you type during registration comes back to greet you later.',
+    },
+    {
+        'id': 'fake_gift_card',
+        'title': 'Too Good to Be True',
+        'difficulty': 3,
+        'hint': "A \"secret\" code that's the same for everyone all day isn't much of a secret.",
+    },
+    {
+        'id': 'hidden_backdoor',
+        'title': 'Skeleton Key',
+        'difficulty': 3,
+        'hint': 'Not every route needs a login form to be reachable.',
+    },
+    {
+        'id': 'rce_console',
+        'title': 'Whole Server, One Shell',
+        'difficulty': 5,
+        'hint': 'A crash can be a door, if whatever is behind it lets you run code.',
+        'flag': RCE_FLAG,
+    },
+]
 
 
 def md5_hash(raw_password):
@@ -51,6 +110,15 @@ def init_db():
             timestamp TEXT NOT NULL
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS solves (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            visitor_id TEXT NOT NULL,
+            challenge_id TEXT NOT NULL,
+            solved_at TEXT NOT NULL,
+            UNIQUE(visitor_id, challenge_id)
+        )
+    ''')
     # Seed a couple of accounts so injection has something to find/bypass.
     existing = conn.execute('SELECT COUNT(*) AS c FROM users').fetchone()['c']
     if existing == 0:
@@ -59,8 +127,35 @@ def init_db():
             [
                 ('admin@fakebank.com', md5_hash('password123'), 1337133.70),
                 ('robot@fakebank.com', md5_hash('beepboop123'), 4200.00),
+                # Weak, wordlist-top password on purpose - cracking this
+                # offline (John/hashcat) and logging in with it is the
+                # "weak_hashing" challenge.
+                ('crackme@fakebank.com', md5_hash('letmein'), 13.37),
             ],
         )
+    conn.commit()
+    conn.close()
+
+
+def write_rce_flag():
+    # Not served by any route - only readable by actually executing code,
+    # e.g. from inside the Werkzeug debugger console.
+    with open(RCE_FLAG_PATH, 'w') as f:
+        f.write(RCE_FLAG + '\n')
+
+
+def get_visitor_id():
+    if 'visitor_id' not in flask.session:
+        flask.session['visitor_id'] = secrets.token_hex(8)
+    return flask.session['visitor_id']
+
+
+def mark_solved(challenge_id):
+    conn = get_db()
+    conn.execute(
+        'INSERT OR IGNORE INTO solves (visitor_id, challenge_id, solved_at) VALUES (?, ?, ?)',
+        (get_visitor_id(), challenge_id, datetime.now().isoformat()),
+    )
     conn.commit()
     conn.close()
 
@@ -72,6 +167,7 @@ def index():
 
 @app.route('/robots.txt')
 def robots():
+    mark_solved('robots_leak')
     return flask.send_from_directory(app.static_folder, 'robots.txt')
 
 
@@ -101,6 +197,14 @@ def login():
 
     if user:
         flask.session['username'] = user['username']
+        if md5_hash(password) != user['password']:
+            # Matched a row without actually knowing its real password -
+            # only possible via the injection above.
+            mark_solved('sqli_login_bypass')
+        elif user['username'] == 'crackme@fakebank.com':
+            # Real password match on the crackme account means they
+            # actually cracked the hash offline.
+            mark_solved('weak_hashing')
         return flask.redirect(flask.url_for('dashboard'))
 
     return flask.render_template('index.html', error='Invalid username or password.')
@@ -140,6 +244,10 @@ def dashboard():
 
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+
+    if re.search(r'[<>]|onerror\s*=|<script', user['username'], re.IGNORECASE):
+        mark_solved('stored_xss')
+
     rows = conn.execute(
         'SELECT timestamp, amount FROM transactions WHERE sender = ? ORDER BY id DESC LIMIT 7',
         (username,),
@@ -174,6 +282,7 @@ def logout():
 # as admin with zero credentials, no auth check at all.
 @app.route('/admin_panel1234510')
 def admin_panel():
+    mark_solved('hidden_backdoor')
     flask.session['username'] = 'admin@fakebank.com'
     return flask.redirect(flask.url_for('dashboard'))
 
@@ -210,6 +319,7 @@ def transfer_post():
     conn = get_db()
 
     if using_gift_card:
+        mark_solved('fake_gift_card')
         conn.close()
         return flask.redirect(flask.url_for('dashboard', transfer=1))
 
@@ -233,8 +343,46 @@ def transfer_post():
 
     return flask.redirect(flask.url_for('dashboard', transfer=1))
 
-    
+
+# --- INTENTIONALLY UNLINKED ---
+# Never referenced from any template - only reachable by URL, discoverable
+# the same way as the admin backdoor (see robots.txt).
+@app.route(SCOREBOARD_PATH, methods=['GET', 'POST'])
+def scoreboard():
+    message = None
+    if flask.request.method == 'POST':
+        submitted = flask.request.form.get('flag', '').strip()
+        if submitted == RCE_FLAG:
+            mark_solved('rce_console')
+            message = ('success', 'Flag accepted!')
+        else:
+            message = ('error', 'Incorrect flag.')
+
+    conn = get_db()
+    solved_rows = conn.execute(
+        'SELECT challenge_id FROM solves WHERE visitor_id = ?', (get_visitor_id(),)
+    ).fetchall()
+    conn.close()
+    solved_ids = {row['challenge_id'] for row in solved_rows}
+
+    board = []
+    for c in CHALLENGES:
+        board.append({
+            'id': c['id'],
+            'title': c['title'],
+            'difficulty': c['difficulty'],
+            'hint': c['hint'],
+            'solved': c['id'] in solved_ids,
+        })
+    solved_count = sum(1 for c in board if c['solved'])
+
+    return flask.render_template(
+        'scoreboard.html', board=board, solved_count=solved_count,
+        total=len(board), message=message,
+    )
+
 
 if __name__ == '__main__':
     init_db()
+    write_rce_flag()
     app.run(debug=True, host='0.0.0.0', port=5005)

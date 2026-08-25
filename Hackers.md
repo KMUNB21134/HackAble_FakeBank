@@ -47,6 +47,15 @@ peek if you're treating this like a challenge).
   crash instead of just reject you, pay attention to what it shows you
   afterward — a "friendly" error page isn't always the end of the road.
 
+## Keeping score
+
+- Somewhere on this site is a page that quietly tracks which of these
+  you've actually pulled off. It's not linked from anywhere in the UI -
+  you'll need to find it the same way you'd find anything else that's
+  "hidden."
+- One challenge on that page can't be solved by triggering a crash alone.
+  It wants proof you did something *with* the shell you landed in.
+
 ## Good luck
 
 If you get through all of it, go read `app.py` and see how close your

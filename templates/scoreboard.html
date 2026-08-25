@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>FakeBank.com - Scoreboard</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    </head>
+    <body>
+        <div class="card scoreboard-card">
+            <h1>Challenge Scoreboard</h1>
+            <p class="subtext">{{ solved_count }} / {{ total }} solved this session</p>
+
+            {% if message %}
+            <p class="{{ 'success' if message[0] == 'success' else 'error' }}">{{ message[1] }}</p>
+            {% endif %}
+
+            <table class="scoreboard-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Challenge</th>
+                        <th>Difficulty</th>
+                        <th>Hint</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in board %}
+                    <tr class="{{ 'solved' if c.solved else '' }}">
+                        <td>{{ '✔' if c.solved else '' }}</td>
+                        <td>{{ c.title }}</td>
+                        <td>{{ '★' * c.difficulty }}{{ '☆' * (5 - c.difficulty) }}</td>
+                        <td>{{ c.hint }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <form class="login-form flag-form" method="post">
+                <input type="text" name="flag" placeholder="FLAG{...}">
+                <button type="submit">Submit flag</button>
+            </form>
+
+            <p class="subtext"><a href="/">Back to Login</a></p>
+        </div>
+
+        <script src="{{ url_for('static', filename='main.js') }}" async defer></script>
+    </body>
+</html>

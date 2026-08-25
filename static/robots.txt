@@ -1,3 +1,4 @@
 User-agent: *
 Disallow: /admin_panel1234510
+Disallow: /scoreboard93217
 Disallow: /register

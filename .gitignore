@@ -17,6 +17,9 @@ instance/
 *.sqlite
 *.sqlite3
 
+# RCE challenge flag (generated at runtime)
+.rce_flag
+
 # Environment / secrets
 .env
 .env.*

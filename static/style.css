@@ -109,6 +109,57 @@ button:hover {
     color: #d9342b;
 }
 
+.success {
+    background-color: #e6f4ea;
+    color: #1e7a34;
+    border: 1px solid #b7e1c0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 18px;
+    font-size: 14px;
+}
+
+.scoreboard-card {
+    max-width: 560px;
+    text-align: left;
+}
+
+.scoreboard-card h1 {
+    text-align: center;
+}
+
+.scoreboard-card .subtext {
+    text-align: center;
+}
+
+.scoreboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+}
+
+.scoreboard-table th,
+.scoreboard-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    vertical-align: top;
+}
+
+.scoreboard-table tr.solved {
+    background-color: #f0faf2;
+}
+
+.flag-form {
+    flex-direction: row;
+    gap: 8px;
+}
+
+.flag-form input {
+    flex: 1;
+}
+
 .spending-chart {
     margin: 8px 0 24px;
     text-align: left;
