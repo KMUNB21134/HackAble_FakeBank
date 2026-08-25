@@ -160,7 +160,8 @@ def dashboard():
         for row in spending
     ]
 
-    return flask.render_template('dashboard.html', user=user, chart=chart)
+    transfer = flask.request.args.get('transfer') == '1'
+    return flask.render_template('dashboard.html', user=user, chart=chart, transfer=transfer)
 
 
 @app.route('/logout')
@@ -210,9 +211,8 @@ def transfer_post():
     conn = get_db()
 
     if using_gift_card:
-        user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
         conn.close()
-        return flask.render_template('dashboard.html', user=user, transfer=True)
+        return flask.redirect(flask.url_for('dashboard', transfer=1))
 
     sender = conn.execute(
         'SELECT balance FROM users WHERE username = ?', (username,)
@@ -230,11 +230,9 @@ def transfer_post():
         (username, recipient, amount, datetime.now().isoformat()),
     )
     conn.commit()
-
-    user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
     conn.close()
 
-    return flask.render_template('dashboard.html', user=user, transfer=True)
+    return flask.redirect(flask.url_for('dashboard', transfer=1))
 
     
 
