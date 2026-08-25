@@ -20,7 +20,7 @@ python3 -m venv .venv
 .venv/bin/python app.py
 ```
 
-The app starts on `http://0.0.0.0:5000/` and creates `fakebank.db`
+The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 (SQLite) on first run, seeded with a few accounts.
 
 ## Seeded accounts
@@ -29,6 +29,12 @@ The app starts on `http://0.0.0.0:5000/` and creates `fakebank.db`
 |-----------------------|---------------|
 | `admin`               | `password123` 
 | `robot@fakebank.com`  | `beepboop123` |
+
+## Features
+
+- **Dashboard spending graph** — the dashboard shows a small bar chart of
+  your last 7 outgoing transfers (date + amount), built from a
+  `transactions` table logged on every real transfer.
 
 ## Known vulnerabilities (intentional)
 
@@ -40,9 +46,9 @@ The app starts on `http://0.0.0.0:5000/` and creates `fakebank.db`
   requirements on `/register` either.
 - **No brute-force protection** — `/login` has no rate limiting, lockout,
   or CAPTCHA, so it's crackable with tools like Hydra.
-- **Hardcoded backdoor route (`/admin_panel101`)** — visiting it logs
+- **Hardcoded backdoor route (`/admin_panel1234510`)** — visiting it logs
   anyone in as `admin` with zero credentials and no auth check.
-- **`robots.txt` leaks the backdoor** — `Disallow: /admin_panel101` in
+- **`robots.txt` leaks the backdoor** — `Disallow: /admin_panel1234510` in
   `static/robots.txt` hands the "hidden" path to anyone who reads it.
 - **Debug mode enabled** (`app.run(debug=True, ...)`) — exposes the
   Werkzeug interactive debugger/traceback on unhandled errors.

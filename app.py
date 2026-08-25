@@ -42,6 +42,15 @@ def init_db():
             balance REAL NOT NULL DEFAULT 1000.0
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender TEXT NOT NULL,
+            recipient TEXT NOT NULL,
+            amount REAL NOT NULL,
+            timestamp TEXT NOT NULL
+        )
+    ''')
     # Seed a couple of accounts so injection has something to find/bypass.
     existing = conn.execute('SELECT COUNT(*) AS c FROM users').fetchone()['c']
     if existing == 0:
@@ -132,9 +141,26 @@ def dashboard():
 
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    rows = conn.execute(
+        'SELECT timestamp, amount FROM transactions WHERE sender = ? ORDER BY id DESC LIMIT 7',
+        (username,),
+    ).fetchall()
     conn.close()
 
-    return flask.render_template('dashboard.html', user=user)
+    # Oldest -> newest for a left-to-right chart, each bar scaled against
+    # the largest amount in the window.
+    spending = list(reversed(rows))
+    max_amount = max((row['amount'] for row in spending), default=0)
+    chart = [
+        {
+            'date': row['timestamp'][:10],
+            'amount': row['amount'],
+            'pct': round((row['amount'] / max_amount) * 100) if max_amount else 0,
+        }
+        for row in spending
+    ]
+
+    return flask.render_template('dashboard.html', user=user, chart=chart)
 
 
 @app.route('/logout')
@@ -146,7 +172,7 @@ def logout():
 # --- INTENTIONALLY VULNERABLE ---
 # Hidden/hardcoded backdoor route: anyone who finds this URL is logged in
 # as admin with zero credentials, no auth check at all.
-@app.route('/admin_panel101')
+@app.route('/admin_panel1234510')
 def admin_panel():
     flask.session['username'] = 'admin'
     return flask.redirect(flask.url_for('dashboard'))
@@ -199,6 +225,10 @@ def transfer_post():
     # Recipient doesn't need to exist - if the username isn't real, the
     # money just vanishes (0 rows updated) instead of being rejected.
     conn.execute('UPDATE users SET balance = balance + ? WHERE username = ?', (amount, recipient))
+    conn.execute(
+        'INSERT INTO transactions (sender, recipient, amount, timestamp) VALUES (?, ?, ?, ?)',
+        (username, recipient, amount, datetime.now().isoformat()),
+    )
     conn.commit()
 
     user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
@@ -210,4 +240,4 @@ def transfer_post():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5005)

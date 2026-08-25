@@ -22,6 +22,20 @@
             <p style="color: green;">Transfer successful!</p>
             {% endif %}
 
+            {% if chart %}
+            <div class="spending-chart">
+                <p class="chart-title">Recent spending</p>
+                <div class="chart-bars">
+                    {% for point in chart %}
+                    <div class="chart-bar-wrap">
+                        <div class="chart-bar" style="height: {{ point.pct }}%;" title="${{ '%.2f' | format(point.amount) }} on {{ point.date }}"></div>
+                        <span class="chart-label">{{ point.date[5:] }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <p class="subtext"><a href="/logout">Logout</a></p>
         </div>
     </body>
