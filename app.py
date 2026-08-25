@@ -171,17 +171,21 @@ def index():
     return flask.render_template('index.html')
 
 
+MAX_CHAT_HISTORY = 12  # entries (6 exchanges) - keeps the session cookie small
+
+
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
     history = flask.session.get('chat_history', [])
 
     if flask.request.method == 'POST':
-        message = flask.request.form.get('message', '').strip()
+        message = flask.request.form.get('message', '').strip()[:300]
         if message:
             history = history + [
                 {'from': 'you', 'text': message},
                 {'from': 'management', 'text': 'You are allowed to.'},
             ]
+            history = history[-MAX_CHAT_HISTORY:]
             flask.session['chat_history'] = history
             mark_solved('management_permission')
 
@@ -277,7 +281,7 @@ def dashboard():
     ).fetchall()
     conn.close()
 
-    # Oldest -> newest for a left-to-right chart, each bar scaled against
+    # Oldest -> newest for a left-to-right chart, each point scaled against
     # the largest amount in the window.
     spending = list(reversed(rows))
     max_amount = max((row['amount'] for row in spending), default=0)
