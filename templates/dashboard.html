@@ -28,7 +28,7 @@
                 <div class="chart-bars">
                     {% for point in chart %}
                     <div class="chart-bar-wrap">
-                        <div class="chart-bar" style="height: {{ point.pct }}%;" title="${{ '%.2f' | format(point.amount) }} on {{ point.date }}"></div>
+                        <div class="chart-bar" data-pct="{{ point.pct }}" title="${{ '%.2f' | format(point.amount) }} on {{ point.date }}"></div>
                         <span class="chart-label">{{ point.date[5:] }}</span>
                     </div>
                     {% endfor %}
@@ -38,5 +38,11 @@
 
             <p class="subtext"><a href="/logout">Logout</a></p>
         </div>
+
+        <script>
+            document.querySelectorAll('.chart-bar').forEach(function (bar) {
+                bar.style.height = bar.dataset.pct + '%';
+            });
+        </script>
     </body>
 </html>
