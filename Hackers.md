@@ -33,6 +33,9 @@ peek if you're treating this like a challenge).
 - If you ever get a look at how passwords are stored, don't just note
   *that* they're hashed — look closely at what the stored value itself
   looks like.
+- Not every seeded account belongs to a fictional person. One exists
+  purely so its password can be cracked - and logging in with it for
+  real is the point.
 
 ## Moving money
 
