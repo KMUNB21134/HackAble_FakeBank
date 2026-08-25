@@ -39,10 +39,6 @@
             <p class="subtext"><a href="/logout">Logout</a></p>
         </div>
 
-        <script>
-            document.querySelectorAll('.chart-bar').forEach(function (bar) {
-                bar.style.height = bar.dataset.pct + '%';
-            });
-        </script>
+        <script src="{{ url_for('static', filename='main.js') }}" async defer></script>
     </body>
 </html>
