@@ -4,59 +4,42 @@
 After all, this is meant for learning.
 Good job going to this GitHub page.
 
-If you are stuck on something, here are a few **hints**. They're ordered
-roughly login → account → money, but feel free to jump around. If you want
-the full answer key instead of hints, `README.md` spells everything out
-(don't peek if you're treating this like a challenge).
+If you're stuck, here are a few nudges — not answers. They point at
+*where* to look, not what you'll find or how to exploit it. If you want
+the full answer key instead, `README.md` spells everything out (don't
+peek if you're treating this like a challenge).
 
-## General
+## Getting a feel for the site
 
-- Try using DevTools to see the frontend on some of the pages — view
-  source, check the Network tab, and read any HTML comments left behind.
-- Check for a `robots.txt`. Sites tell crawlers what *not* to index for a
-  reason — sometimes that reason is "we forgot this shouldn't be public."
+- Look at what the browser actually sends and receives — DevTools'
+  Network tab, view-source, and any files a server tends to publish by
+  default. Not everything the app can do is linked from the UI.
+- How is your connection to this site protected? Think about what
+  someone watching the network between you and the server — not the
+  server itself — could actually see.
 
-## Login page
+## The login form
 
-- The login form takes a username and password and puts them into a
-  database query. What happens if your "username" isn't just a name?
-- Comment syntax exists in SQL for a reason. If you can end the query
-  early, does the rest of it even matter?
-- There's no limit on how many times you can try a password. What would
-  a tool like Hydra do here?
-
-## Getting in without logging in at all
-
-- Not every route has to be linked from the UI to exist. Guessing paths
-  is one way to find them — but you don't always have to guess blind.
-
-## Passwords
-
-- If you do get your hands on the password data, look at how it's
-  stored. Does the hash length/format tell you which algorithm was
-  used? Some algorithms are a lot faster to crack than others.
+- Both fields end up somewhere on the server. What happens if you feed
+  them characters a "name" or "password" wouldn't normally contain?
+- Nobody's stopping you from trying the same login over and over. What
+  would that let you do, given enough guesses?
 
 ## Your account
 
-- What you type as a username during registration comes back to you
-  later, somewhere you'll see it every time you log in. Is it treated
-  as plain text there, or could it be treated as something else?
-- If a page will render whatever you put in a field without cleaning it
-  up first, what's the smallest snippet of HTML/JS you could use to
-  prove it executes?
+- Something you type during registration shows up again later,
+  somewhere you'll see it every time you log in. Pay close attention to
+  exactly how it's displayed, not just that it's displayed.
+- If you ever get a look at how passwords are stored, don't just note
+  *that* they're hashed — look closely at what the stored value itself
+  looks like.
 
-## Transfers
+## Moving money
 
-- The transfer form has three fields, but only two of them are
-  required. What's the third one for, and where would its value have
-  to come from to be "valid"?
-- If something is generated from a formula instead of pulled from a
-  secret store, can you compute it yourself? Check the page source on
-  the transfer page for a clue about how that value is built.
-- Does the app check that the amount you're sending is actually
-  positive? What about whether you can afford it?
-- Does the app check that the person you're sending money to actually
-  exists?
+- The transfer form has an optional field. Why would something be
+  optional unless there's another way to satisfy whatever it's checking?
+- Try values for "amount" and "recipient" that a careful app would
+  reject. Does this one?
 
 ## Good luck
 

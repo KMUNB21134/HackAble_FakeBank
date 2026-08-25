@@ -59,8 +59,16 @@ The app starts on `http://0.0.0.0:5000/` and creates `fakebank.db`
 - **Stored XSS (`/dashboard`)** — the welcome message renders the
   logged-in user's username with Jinja's `| safe` filter, disabling
   auto-escaping. Register an account with a username like
-  `<script>alert(1)</script>` and it executes on `/dashboard` every time
-  that account logs in.
+  `<img src=x onerror=alert(1)>` (avoid `'` — it'll break the vulnerable
+  `/login` query above) and it executes on `/dashboard` every time that
+  account logs in.
+- **Cleartext HTTP, no TLS** — the app only runs `app.run(host='0.0.0.0',
+  ...)` with no HTTPS. Every request, including the raw `/login` POST
+  body, travels unencrypted. Anyone with network visibility (same
+  LAN/Wi-Fi, ARP spoofing, a compromised router) can read credentials
+  straight off the wire with a packet capture tool like Wireshark or
+  `tcpdump` — no cracking required, the password is sent in plaintext
+  before the server ever hashes it.
 
 ## Disclaimer
 
