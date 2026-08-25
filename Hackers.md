@@ -41,6 +41,12 @@ peek if you're treating this like a challenge).
 - Try values for "amount" and "recipient" that a careful app would
   reject. Does this one?
 
+## When things go wrong
+
+- Not every input is handled the same way. If you can make the server
+  crash instead of just reject you, pay attention to what it shows you
+  afterward — a "friendly" error page isn't always the end of the road.
+
 ## Good luck
 
 If you get through all of it, go read `app.py` and see how close your
