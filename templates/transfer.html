@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>FakeBank.com - Transfer</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    </head>
+    <body>
+        <div class="card">
+            <h1>Transfer Funds</h1>
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
+            <form class="login-form" action="/transfer" method="POST">
+                <input type="text" name="recipient" placeholder="Recipient Username" required>
+                <input type="number" step="0.01" name="amount" placeholder="Amount" required>
+                <input type="password" name="gift_number" placeholder="Gift card number">
+                <button type="submit">Transfer</button>
+            </form>
+            <p class="gift-hint">You can get a gift card code today by signing up for our daily newsletter and other spam!</p>
+            <p class="subtext"><a href="/dashboard">Back to Dashboard</a></p>
+        </div>
+        <!-- Today's gift card code = MD5 of the current date, formatted YYYY-MM-DD (Python: datetime.now().strftime('%Y-%m-%d')) -->
+
+
+        
+        <script src="{{ url_for('static', filename='main.js') }}" async defer></script>
+    </body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>FakeBank.com - Dashboard</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    </head>
+    <body>
+        <div class="card">
+            <h1>Welcome, {{ user['username'] }}!</h1>
+            <p class="balance">Balance: ${{ '%.2f' | format(user['balance']) }}</p>
+            <button type="button" onclick="window.location.href = '/transfer'">Transfer</button>
+            {% if transfer %}
+            <p style="color: green;">Transfer successful!</p>
+            {% endif %}
+
+            <p class="subtext"><a href="/logout">Logout</a></p>
+        </div>
+    </body>
+</html>

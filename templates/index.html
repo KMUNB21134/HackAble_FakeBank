@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>FakeBank.com</title>
+
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    </head>
+    <body>
+        <div class="card">
+            <h1>Welcome to FakeBank.com<br>Please login to continue.</h1>
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
+            <form class="login-form" action="/login" method="post">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p class="subtext">Don't have an account? <a href="/register">Register here</a>.</p>
+        </div>
+        <a href="https://github.com/KMUNB21134/HackAble_FakeBank">Our Github</a>
+
+        <script src="{{ url_for('static', filename='main.js') }}" async defer></script>
+    </body>
+</html>
