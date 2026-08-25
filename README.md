@@ -50,8 +50,12 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   anyone in as `admin` with zero credentials and no auth check.
 - **`robots.txt` leaks the backdoor** — `Disallow: /admin_panel1234510` in
   `static/robots.txt` hands the "hidden" path to anyone who reads it.
-- **Debug mode enabled** (`app.run(debug=True, ...)`) — exposes the
-  Werkzeug interactive debugger/traceback on unhandled errors.
+- **Debug mode enabled (Werkzeug console RCE)** — `app.run(debug=True,
+  ...)` doesn't just leak tracebacks on unhandled errors; each frame in
+  the traceback page is a live, interactive Python shell running
+  server-side, protected only by a PIN printed to the server's own
+  console log. Reach it (any uncaught exception) and it's full remote
+  code execution, not just information disclosure.
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
 - **Fake gift card code (`/transfer`)** — entering a valid "gift card
