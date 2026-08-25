@@ -25,9 +25,9 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 
 ## Seeded accounts
 
-| Username             | Password      |
+| Username              | Password      |
 |-----------------------|---------------|
-| `admin`               | `password123` 
+| `admin@fakebank.com`  | `password123` |
 | `robot@fakebank.com`  | `beepboop123` |
 
 ## Features
@@ -39,7 +39,7 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 ## Known vulnerabilities (intentional)
 
 - **SQL injection (`/login`)** — the login query is built with raw string
-  interpolation instead of parameterized SQL. Try `admin'--` as the
+  interpolation instead of parameterized SQL. Try `admin@fakebank.com'--` as the
   username with any password, or `' OR '1'='1`.
 - **Weak, guessable passwords** — top-of-wordlist passwords
   (`password123`, `letmein`, etc.), with no complexity or length
@@ -47,7 +47,7 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 - **No brute-force protection** — `/login` has no rate limiting, lockout,
   or CAPTCHA, so it's crackable with tools like Hydra.
 - **Hardcoded backdoor route (`/admin_panel1234510`)** — visiting it logs
-  anyone in as `admin` with zero credentials and no auth check.
+  anyone in as `admin@fakebank.com` with zero credentials and no auth check.
 - **`robots.txt` leaks the backdoor** — `Disallow: /admin_panel1234510` in
   `static/robots.txt` hands the "hidden" path to anyone who reads it.
 - **Debug mode enabled (Werkzeug console RCE)** — `app.run(debug=True,

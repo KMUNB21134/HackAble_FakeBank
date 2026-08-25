@@ -57,9 +57,8 @@ def init_db():
         conn.executemany(
             'INSERT INTO users (username, password, balance) VALUES (?, ?, ?)',
             [
-                ('admin', md5_hash('password123'), 1337133.70),
-                ('alice', md5_hash('letmein'), 4200.00),
-                ('bob', md5_hash('hunter2'), 950.25),
+                ('admin@fakebank.com', md5_hash('password123'), 1337133.70),
+                ('robot@fakebank.com', md5_hash('beepboop123'), 4200.00),
             ],
         )
     conn.commit()
@@ -83,7 +82,7 @@ def login():
 
     # --- INTENTIONALLY VULNERABLE ---
     # Raw string interpolation into SQL instead of parameterized query.
-    # e.g. username = admin' -- to bypass password, or ' OR '1'='1 to
+    # e.g. username = admin@fakebank.com' -- to bypass password, or ' OR '1'='1 to
     # log in as the first user / dump results depending on how it's used.
     query = "SELECT * FROM users WHERE username = '{}' AND password = '{}'".format(
         username, md5_hash(password)
@@ -175,7 +174,7 @@ def logout():
 # as admin with zero credentials, no auth check at all.
 @app.route('/admin_panel1234510')
 def admin_panel():
-    flask.session['username'] = 'admin'
+    flask.session['username'] = 'admin@fakebank.com'
     return flask.redirect(flask.url_for('dashboard'))
 
 @app.route('/transfer')
