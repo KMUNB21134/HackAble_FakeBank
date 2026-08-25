@@ -92,8 +92,15 @@ def daily_gift_code():
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    # timeout= gives concurrent writers a chance to retry instead of
+    # failing immediately; WAL lets readers and writers avoid blocking
+    # each other, which matters now that the server handles requests
+    # concurrently (threaded=True) and some routes open more than one
+    # connection per request.
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
+    conn.execute('PRAGMA journal_mode=WAL')
+    conn.execute('PRAGMA busy_timeout=10000')
     return conn
 
 
@@ -271,15 +278,14 @@ def dashboard():
 
     conn = get_db()
     user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-
-    if re.search(r'[<>]|onerror\s*=|<script', user['username'], re.IGNORECASE):
-        mark_solved('stored_xss')
-
     rows = conn.execute(
         'SELECT timestamp, amount FROM transactions WHERE sender = ? ORDER BY id DESC LIMIT 7',
         (username,),
     ).fetchall()
     conn.close()
+
+    if re.search(r'[<>]|onerror\s*=|<script', user['username'], re.IGNORECASE):
+        mark_solved('stored_xss')
 
     # Oldest -> newest for a left-to-right chart, each point scaled against
     # the largest amount in the window.
