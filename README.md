@@ -56,6 +56,11 @@ The app starts on `http://0.0.0.0:5000/` and creates `fakebank.db`
 - **No recipient validation (`/transfer`)** — money can be sent to any
   username, real or not; a transfer to a nonexistent user still debits
   the sender and the funds simply vanish.
+- **Stored XSS (`/dashboard`)** — the welcome message renders the
+  logged-in user's username with Jinja's `| safe` filter, disabling
+  auto-escaping. Register an account with a username like
+  `<script>alert(1)</script>` and it executes on `/dashboard` every time
+  that account logs in.
 
 ## Disclaimer
 

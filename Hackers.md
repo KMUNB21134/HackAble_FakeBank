@@ -36,6 +36,15 @@ the full answer key instead of hints, `README.md` spells everything out
   stored. Does the hash length/format tell you which algorithm was
   used? Some algorithms are a lot faster to crack than others.
 
+## Your account
+
+- What you type as a username during registration comes back to you
+  later, somewhere you'll see it every time you log in. Is it treated
+  as plain text there, or could it be treated as something else?
+- If a page will render whatever you put in a field without cleaning it
+  up first, what's the smallest snippet of HTML/JS you could use to
+  prove it executes?
+
 ## Transfers
 
 - The transfer form has three fields, but only two of them are
