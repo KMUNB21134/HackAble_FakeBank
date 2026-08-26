@@ -17,11 +17,16 @@ anywhere public or reuse any of its patterns in a real application.**
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/python app.py
+./run.sh
 ```
 
 The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
-(SQLite) on first run, seeded with a few accounts.
+(SQLite) on first run, seeded with a few accounts. `run.sh` removes
+everything the app generated at runtime (`fakebank.db` and its WAL
+sidecar files, `.rce_flag`) once it stops, so each run starts clean.
+Run it directly in a terminal rather than backgrounding it, so Ctrl+C
+reaches it normally. You can still run `.venv/bin/python app.py`
+directly instead if you want the database to persist across runs.
 
 ## Seeded accounts
 
