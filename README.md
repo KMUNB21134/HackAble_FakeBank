@@ -150,3 +150,9 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 This project exists purely to demonstrate common web vulnerabilities in a
 safe, local, throwaway environment. Only use it against your own local
 instance, or in an environment you're explicitly authorized to test. Is not to be made public except by creator.
+
+**On IP addresses:** the app records the source IP of every transfer (see
+"No audit-log protection" above) purely as an in-app audit trail meant to
+be found and erased as part of that challenge. It never leaves
+`fakebank.db` — nothing in this app sends it anywhere external (no
+analytics, no logging service, no third party of any kind).
