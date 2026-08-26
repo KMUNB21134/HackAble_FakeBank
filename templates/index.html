@@ -24,6 +24,14 @@
             </form>
             <p class="subtext">Don't have an account? <a href="/register">Register here</a>.</p>
             <p class="subtext"><a href="/chat">Chat with Management &amp; IT</a></p>
+
+            {% if found_scoreboard %}
+            <!-- INTENTIONALLY VULNERABLE: only rendered once this session has
+                 visited the scoreboard before, but still hidden with the same
+                 screen-reader-only CSS trick as the card-viewing link on the
+                 dashboard rather than being removed from the UI entirely. -->
+            <a href="{{ scoreboard_path }}" class="invisible-admin-link">Back to Scoreboard</a>
+            {% endif %}
         </div>
         <a href="https://github.com/KMUNB21134/HackAble_FakeBank">Our Github</a>
 

@@ -249,7 +249,10 @@ def mark_solved(challenge_id):
 
 @app.route('/')
 def index():
-    return flask.render_template('index.html')
+    found_scoreboard = flask.session.get('found_scoreboard', False)
+    return flask.render_template(
+        'index.html', found_scoreboard=found_scoreboard, scoreboard_path=SCOREBOARD_PATH
+    )
 
 
 MAX_CHAT_HISTORY = 12  # entries (6 exchanges) - keeps the session cookie small
@@ -517,6 +520,11 @@ def transfer_post():
 # the same way as the admin backdoor (see robots.txt).
 @app.route(SCOREBOARD_PATH, methods=['GET', 'POST'])
 def scoreboard():
+    # Once a session has found this page once, the login page grows a
+    # (still hidden) shortcut back to it - no need to rediscover the URL
+    # every visit.
+    flask.session['found_scoreboard'] = True
+
     message = None
     if flask.request.method == 'POST':
         submitted = flask.request.form.get('flag', '').strip()

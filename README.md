@@ -45,7 +45,11 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   `.rce_flag` from inside the debugger console) — the one exploit this
   app genuinely cannot observe itself, since the debugger intercepts
   requests before Flask ever routes them. The page is not linked or
-  leaked anywhere — reaching it means knowing or guessing the exact URL.
+  leaked anywhere — reaching it means knowing or guessing the exact URL,
+  the first time. Once a session has visited it once, the login page
+  grows a hidden shortcut back to it (same invisible-link trick as
+  `/view-all-cards`, tracked via `session['found_scoreboard']`), so you
+  do not have to remember or re-discover the URL on later visits.
   Whenever a new vulnerability is added to this app, a matching
   scoreboard challenge should be added alongside it.
 - **"Chat with Management & IT"** — a button on the login page (`/chat`)
