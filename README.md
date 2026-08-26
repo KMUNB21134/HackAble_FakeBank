@@ -92,9 +92,28 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 - **Debug mode enabled (Werkzeug console RCE)** — `app.run(debug=True,
   ...)` doesn't just leak tracebacks on unhandled errors; each frame in
   the traceback page is a live, interactive Python shell running
-  server-side, protected only by a PIN printed to the server's own
-  console log. Reach it (any uncaught exception) and it's full remote
-  code execution, not just information disclosure.
+  server-side, protected only by a PIN. Reach it (any uncaught
+  exception) and it's full remote code execution, not just information
+  disclosure.
+
+  The PIN itself is weaker than it looks. It isn't randomly generated
+  per run — it's deterministically computed from a handful of
+  environment facts: the OS username running the process, the app's
+  module name, the absolute file path to `app.py`, the machine's MAC
+  address, and a machine-id value. That's why this app's PIN
+  (`163-434-408`) stays identical across every restart. In this local
+  setup, reading it off the server's own console is realistic (it's
+  your machine). In a real deployment it isn't the only path: those
+  inputs are often predictable defaults in containerized environments
+  (a fixed user like `root`, a conventional path like `/app/app.py`),
+  which is exactly what public PIN-computation/brute-force tools target
+  — recomputing the PIN offline from guessed inputs rather than
+  guessing the 9-digit number itself. Werkzeug does rate-limit direct
+  online guessing against the `pinauth` endpoint (the `"exhausted"`
+  field in its JSON response), but that doesn't protect against the
+  offline-computation approach. This is exactly why Flask's own docs
+  warn, in bold, that debug mode must never be enabled outside local
+  development.
 - **No audit-log protection** — the `transactions` table isn't
   append-only, signed, or backed up anywhere; it's just rows in the same
   SQLite file as everything else. Every row also logs the real source IP

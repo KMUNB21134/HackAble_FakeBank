@@ -1,3 +1,4 @@
+# Like said in README, do not go here if ur are doing for comp.
 import flask
 import hashlib
 import jwt
@@ -112,7 +113,7 @@ CHALLENGES = [
         'id': 'rce_console',
         'title': 'Remote Code Execution via Debug Console',
         'difficulty': 5,
-        'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next. Once you are executing code on the server, nothing stops you from also opening fakebank.db directly and rewriting or deleting rows in the transactions table - there is no audit-log protection here at all, and every transfer is logged with the real IP address it came from.",
+        'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next. The PIN guarding the console looks random but is not - it is computed from a handful of predictable facts about the machine running it, not generated fresh each time, which is worth knowing if you ever face this without a terminal open on the server yourself. Once you are executing code on the server, nothing stops you from also opening fakebank.db directly and rewriting or deleting rows in the transactions table - there is no audit-log protection here at all, and every transfer is logged with the real IP address it came from.",
         'flag': RCE_FLAG,
     },
     {

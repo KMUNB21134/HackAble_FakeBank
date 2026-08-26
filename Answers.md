@@ -204,10 +204,23 @@ grep -o 'SECRET = "[^"]*"' crash.html
 grep -o 'frame-[0-9]*' crash.html | head -1
 ```
 
-**Step 3 — authenticate with the PIN** (printed to the server's own
-console/stdout when it started). The debugger tracks PIN-auth success in
-a cookie, so this request and step 4 **must reuse the same cookie jar**
-or the auth won't carry over:
+**Step 3 — authenticate with the PIN.** In this local setup you can just
+read it off the server's own console/stdout when it started. In a real
+attack you generally wouldn't have that — but the PIN doesn't actually
+need it. It isn't randomly generated per run; it's deterministically
+computed from a handful of environment facts (the OS username running
+the process, the app's module name, the absolute path to `app.py`, the
+machine's MAC address, and a machine-id value), which is exactly why
+this app's PIN stays identical across every restart. If an attacker can
+learn or guess those inputs — very plausible in containerized
+deployments with predictable defaults like a `root` user and a
+conventional path such as `/app/app.py` — they can recompute the exact
+same PIN completely offline. Public PIN-bruteforce tools target this
+recomputation, not the 9-digit number directly (Werkzeug does rate-limit
+naive online guessing against `pinauth`, see the `"exhausted"` field in
+its response, but that doesn't stop the offline approach). The debugger
+also tracks PIN-auth success in a cookie, so this request and step 4
+**must reuse the same cookie jar** or the auth won't carry over:
 
 ```
 curl -c dbg.txt -b dbg.txt "http://127.0.0.1:5005/?__debugger__=yes&cmd=pinauth&pin=<PIN>&s=<SECRET>"
