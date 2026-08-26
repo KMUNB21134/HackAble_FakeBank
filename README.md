@@ -44,10 +44,10 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   flag that's only readable by executing code on the server (e.g. reading
   `.rce_flag` from inside the debugger console) — the one exploit this
   app genuinely cannot observe itself, since the debugger intercepts
-  requests before Flask ever routes them. The page is only discoverable
-  via the `robots.txt` leak below, same as the admin backdoor. Whenever a
-  new vulnerability is added to this app, a matching scoreboard challenge
-  should be added alongside it.
+  requests before Flask ever routes them. The page is not linked or
+  leaked anywhere — reaching it means knowing or guessing the exact URL.
+  Whenever a new vulnerability is added to this app, a matching
+  scoreboard challenge should be added alongside it.
 - **"Chat with Management & IT"** — a button on the login page (`/chat`)
   for the easiest challenge on the scoreboard: asking permission before
   you start testing. It always replies "You are allowed to." regardless
@@ -67,9 +67,8 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   or CAPTCHA, so it's crackable with tools like Hydra.
 - **Hardcoded backdoor route (`/admin_panel1234510`)** — visiting it logs
   anyone in as `admin@fakebank.com` with zero credentials and no auth check.
-- **`robots.txt` leaks the backdoor and scoreboard** — `Disallow:
-  /admin_panel1234510` and `Disallow: /scoreboard93217` in
-  `static/robots.txt` hand both "hidden" paths to anyone who reads it.
+- **`robots.txt` leaks the backdoor** — `Disallow: /admin_panel1234510` in
+  `static/robots.txt` hands the "hidden" path to anyone who reads it.
 - **Debug mode enabled (Werkzeug console RCE)** — `app.run(debug=True,
   ...)` doesn't just leak tracebacks on unhandled errors; each frame in
   the traceback page is a live, interactive Python shell running

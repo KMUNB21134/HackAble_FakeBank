@@ -120,7 +120,7 @@ button:hover {
 }
 
 .scoreboard-card {
-    max-width: 560px;
+    max-width: 640px;
     text-align: left;
 }
 
@@ -130,6 +130,15 @@ button:hover {
 
 .scoreboard-card .subtext {
     text-align: center;
+}
+
+.scoreboard-intro {
+    font-size: 13px;
+    color: #555;
+    background-color: #f4f6f8;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0 0 16px;
 }
 
 .scoreboard-table {

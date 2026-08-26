@@ -12,6 +12,17 @@
         <div class="card scoreboard-card">
             <h1>Challenge Scoreboard</h1>
             <p class="subtext">{{ solved_count }} / {{ total }} solved this session</p>
+            <p class="scoreboard-intro">
+                Each row below is one vulnerability in this app. Just doing the
+                thing in the "How to solve it" column marks it solved
+                automatically - the checkmark and count above update on your
+                next visit to this page. The one exception is "Remote Code
+                Execution," which needs you to paste a flag string into the
+                box at the bottom, since that is the one exploit this app has
+                no way to observe on its own. Stars show roughly how involved
+                a challenge is, from 1 (a couple of clicks) to 5 (a full
+                multi-step exploit chain).
+            </p>
 
             {% if message %}
             <p class="{{ 'success' if message[0] == 'success' else 'error' }}">{{ message[1] }}</p>
@@ -23,7 +34,7 @@
                         <th></th>
                         <th>Challenge</th>
                         <th>Difficulty</th>
-                        <th>Hint</th>
+                        <th>How to solve it</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,6 +49,10 @@
                 </tbody>
             </table>
 
+            <p class="subtext">
+                Got the flag from the Remote Code Execution challenge? Paste
+                it below to mark that one solved too.
+            </p>
             <form class="login-form flag-form" method="post">
                 <input type="text" name="flag" placeholder="FLAG{...}">
                 <button type="submit">Submit flag</button>
