@@ -110,7 +110,7 @@ CHALLENGES = [
         'id': 'rce_console',
         'title': 'Remote Code Execution via Debug Console',
         'difficulty': 5,
-        'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next.",
+        'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next. Once you are executing code on the server, nothing stops you from also opening fakebank.db directly and rewriting or deleting rows in the transactions table - there is no audit-log protection here at all.",
         'flag': RCE_FLAG,
     },
     {

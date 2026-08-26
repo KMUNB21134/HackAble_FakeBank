@@ -91,6 +91,15 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   server-side, protected only by a PIN printed to the server's own
   console log. Reach it (any uncaught exception) and it's full remote
   code execution, not just information disclosure.
+- **No audit-log protection** — the `transactions` table isn't
+  append-only, signed, or backed up anywhere; it's just rows in the same
+  SQLite file as everything else. Anyone who reaches the Werkzeug RCE
+  above can run `sqlite3.connect('fakebank.db').execute('DELETE FROM
+  transactions')` (or delete a single row) and erase the evidence of a
+  transfer — including one they just made themselves. No dedicated
+  feature or extra vulnerability needed; it's a direct consequence of
+  the RCE challenge already having full read/write access to the
+  database file.
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
 - **Fake gift card code (`/transfer`)** — entering a valid "gift card

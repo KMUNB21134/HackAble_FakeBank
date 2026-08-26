@@ -57,6 +57,10 @@ peek if you're treating this like a challenge).
 - Not every input is handled the same way. If you can make the server
   crash instead of just reject you, pay attention to what it shows you
   afterward — a "friendly" error page isn't always the end of the road.
+- Whatever you can reach that way isn't limited to looking around. If
+  you can read files, ask yourself what else is sitting right next to
+  the one you were looking for — like a record of every transfer
+  anyone's ever made.
 
 ## Keeping score
 
