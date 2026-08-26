@@ -93,13 +93,16 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   code execution, not just information disclosure.
 - **No audit-log protection** — the `transactions` table isn't
   append-only, signed, or backed up anywhere; it's just rows in the same
-  SQLite file as everything else. Anyone who reaches the Werkzeug RCE
+  SQLite file as everything else. Every row also logs the real source IP
+  (`flask.request.remote_addr`, not a spoofable client-supplied header)
+  of whoever made the transfer. Anyone who reaches the Werkzeug RCE
   above can run `sqlite3.connect('fakebank.db').execute('DELETE FROM
   transactions')` (or delete a single row) and erase the evidence of a
-  transfer — including one they just made themselves. No dedicated
-  feature or extra vulnerability needed; it's a direct consequence of
-  the RCE challenge already having full read/write access to the
-  database file.
+  transfer — including the IP address that would otherwise trace it back
+  to them. No dedicated feature or extra vulnerability needed; it's a
+  direct consequence of the RCE challenge already having full read/write
+  access to the database file. There's no other way to hide that IP —
+  it isn't shown or editable anywhere in the normal app.
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
 - **Fake gift card code (`/transfer`)** — entering a valid "gift card

@@ -110,7 +110,7 @@ CHALLENGES = [
         'id': 'rce_console',
         'title': 'Remote Code Execution via Debug Console',
         'difficulty': 5,
-        'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next. Once you are executing code on the server, nothing stops you from also opening fakebank.db directly and rewriting or deleting rows in the transactions table - there is no audit-log protection here at all.",
+        'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next. Once you are executing code on the server, nothing stops you from also opening fakebank.db directly and rewriting or deleting rows in the transactions table - there is no audit-log protection here at all, and every transfer is logged with the real IP address it came from.",
         'flag': RCE_FLAG,
     },
     {
@@ -167,9 +167,17 @@ def init_db():
             sender TEXT NOT NULL,
             recipient TEXT NOT NULL,
             amount REAL NOT NULL,
-            timestamp TEXT NOT NULL
+            timestamp TEXT NOT NULL,
+            ip_address TEXT
         )
     ''')
+    try:
+        # Migration for pre-existing local databases created before this
+        # column existed - CREATE TABLE IF NOT EXISTS above does not add
+        # columns to a table that already exists.
+        conn.execute('ALTER TABLE transactions ADD COLUMN ip_address TEXT')
+    except sqlite3.OperationalError:
+        pass
     conn.execute('''
         CREATE TABLE IF NOT EXISTS solves (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -506,8 +514,9 @@ def transfer_post():
     # money just vanishes (0 rows updated) instead of being rejected.
     conn.execute('UPDATE users SET balance = balance + ? WHERE username = ?', (amount, recipient))
     conn.execute(
-        'INSERT INTO transactions (sender, recipient, amount, timestamp) VALUES (?, ?, ?, ?)',
-        (username, recipient, amount, datetime.now().isoformat()),
+        'INSERT INTO transactions (sender, recipient, amount, timestamp, ip_address) '
+        'VALUES (?, ?, ?, ?, ?)',
+        (username, recipient, amount, datetime.now().isoformat(), flask.request.remote_addr),
     )
     conn.commit()
     conn.close()

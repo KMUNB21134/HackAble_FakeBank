@@ -61,6 +61,9 @@ peek if you're treating this like a challenge).
   you can read files, ask yourself what else is sitting right next to
   the one you were looking for — like a record of every transfer
   anyone's ever made.
+- That record keeps more than the amount and the date. If you made a
+  transfer and want it to look like you never did, think about what
+  else it wrote down about where the request came from.
 
 ## Keeping score
 
