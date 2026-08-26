@@ -311,6 +311,17 @@ def login():
     username = flask.request.form.get('username', '')
     password = flask.request.form.get('password', '')
 
+    # --- INTENTIONALLY WEAK "FIX" ---
+    # Blocklists the single most googled textbook SQLi payload by exact,
+    # case-sensitive substring match, without touching the actual
+    # vulnerability below (still raw string interpolation). Trivially
+    # bypassed by any variation at all - different casing, a different
+    # tautology, or any of the other working payloads documented
+    # elsewhere in this app. A lesson in why blocklisting a known-bad
+    # string is not the same as fixing the underlying bug.
+    if 'OR 1=1' in username:
+        return flask.render_template('index.html', error='Invalid username or password.')
+
     # --- INTENTIONALLY VULNERABLE ---
     # Raw string interpolation into SQL instead of parameterized query.
     # e.g. username = internAdmin@fakebank.com' -- to bypass password, or ' OR '1'='1 to
