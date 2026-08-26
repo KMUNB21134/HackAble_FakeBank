@@ -16,7 +16,7 @@ anywhere public or reuse any of its patterns in a real application.**
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install flask
+.venv/bin/pip install -r requirements.txt
 .venv/bin/python app.py
 ```
 
