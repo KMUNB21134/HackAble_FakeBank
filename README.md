@@ -127,6 +127,15 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   ```
   curl http://localhost:5005/api/balance -H "Authorization: Bearer <token>"
   ```
+
+  If you've already captured `TheMainAdmin@fakebank.com`'s real password
+  via the cleartext-sniffing challenge, you don't need either bug above -
+  `/api/login` with the real password issues a fully legitimate token and
+  `/api/balance` works normally. That's expected, not a shortcut around
+  anything: real credentials always bypass an auth vulnerability, and the
+  scoreboard only credits the "Forge an API Token" challenge for a token
+  that was never actually issued (see `issued_tokens` in `app.py`) - a
+  genuinely-issued token, however you got the password, doesn't count.
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
 - **Fake gift card code (`/transfer`)** — entering a valid "gift card
