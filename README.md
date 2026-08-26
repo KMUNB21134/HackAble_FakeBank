@@ -37,7 +37,7 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
-  from the UI, like Juice Shop's own Score Board) tracks which of the 8
+  from the UI, like Juice Shop's own Score Board) tracks which of the 9
   challenges below you've actually completed, per browser session. Most
   are detected automatically the moment the exploit condition is met
   server-side; the Werkzeug RCE challenge instead requires pasting in a
@@ -97,7 +97,12 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   LAN/Wi-Fi, ARP spoofing, a compromised router) can read credentials
   straight off the wire with a packet capture tool like Wireshark or
   `tcpdump` — no cracking required, the password is sent in plaintext
-  before the server ever hashes it.
+  before the server ever hashes it. A background thread
+  (`start_credential_bot()`) logs the `courier@fakebank.com` account in
+  over plain HTTP every 20 seconds using a strong, never-displayed
+  password, purely so there's always real cleartext traffic to capture —
+  the "Sniff Credentials Off the Wire" scoreboard challenge. Its
+  password isn't listed here on purpose; capture it.
 
 ## Disclaimer
 

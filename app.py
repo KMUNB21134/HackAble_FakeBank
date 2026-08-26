@@ -4,6 +4,10 @@ import os
 import re
 import secrets
 import sqlite3
+import threading
+import time
+import urllib.parse
+import urllib.request
 from datetime import datetime
 
 app = flask.Flask(__name__)
@@ -11,9 +15,40 @@ app.secret_key = 'not-a-real-secret'  # fine for a local vuln demo, not for prod
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'fakebank.db')
 
-# Deliberately unlinked - only discoverable via the robots.txt leak, same as
-# the admin backdoor.
+# Deliberately unlinked and not leaked anywhere (not even robots.txt) -
+# reaching it means guessing or otherwise discovering the exact URL.
 SCOREBOARD_PATH = '/scoreboard93217'
+
+# --- INTENTIONALLY VULNERABLE ---
+# Simulates a real user logging in periodically. Since the app only ever
+# serves plain HTTP, every one of these login POSTs (including the real
+# password) travels the network in cleartext - anyone capturing packets
+# on the wire while this fires can read it straight off, no cracking
+# needed. The password is strong on purpose so brute-forcing/wordlists
+# will not get you there - only watching the wire will.
+COURIER_USERNAME = 'courier@fakebank.com'
+COURIER_PASSWORD = 'Xk9$mQ2vLp8!'
+COURIER_LOGIN_INTERVAL = 20  # seconds
+
+
+def _courier_login_once():
+    data = urllib.parse.urlencode({
+        'username': COURIER_USERNAME,
+        'password': COURIER_PASSWORD,
+    }).encode()
+    try:
+        urllib.request.urlopen('http://127.0.0.1:5005/login', data=data, timeout=5)
+    except OSError:
+        pass
+
+
+def start_credential_bot():
+    def loop():
+        while True:
+            time.sleep(COURIER_LOGIN_INTERVAL)
+            _courier_login_once()
+
+    threading.Thread(target=loop, daemon=True).start()
 
 # Only obtainable by actually executing code via the debugger console (see
 # write_rce_flag() below) - this is the one challenge app.py cannot detect
@@ -64,6 +99,12 @@ CHALLENGES = [
         'title': 'Find the Hardcoded Backdoor',
         'difficulty': 2,
         'hint': 'Not every route on this site needs a password to reach. Some are not supposed to be found at all.',
+    },
+    {
+        'id': 'cleartext_creds',
+        'title': 'Sniff Credentials Off the Wire',
+        'difficulty': 3,
+        'hint': 'This app never uses HTTPS, so a login POST travels the network in plain text. Something on this server logs in with real credentials on its own every so often - if you are watching the network when it happens, you will see exactly what it typed.',
     },
     {
         'id': 'rce_console',
@@ -144,6 +185,10 @@ def init_db():
                 # offline (John/hashcat) and logging in with it is the
                 # "weak_hashing" challenge.
                 ('crackme@fakebank.com', md5_hash('letmein'), 13.37),
+                # Strong password on purpose - the credential_bot logs this
+                # one in periodically over plain HTTP, so the only realistic
+                # way to obtain it is packet capture, not cracking.
+                (COURIER_USERNAME, md5_hash(COURIER_PASSWORD), 640.25),
             ],
         )
     conn.commit()
@@ -239,6 +284,11 @@ def login():
             # Real password match on the crackme account means they
             # actually cracked the hash offline.
             mark_solved('weak_hashing')
+        elif user['username'] == COURIER_USERNAME:
+            # Real password match on the courier account, whose strong
+            # password is never shown anywhere, means it was captured off
+            # the wire while credential_bot logged it in.
+            mark_solved('cleartext_creds')
         return flask.redirect(flask.url_for('dashboard'))
 
     return flask.render_template('index.html', error='Invalid username or password.')
@@ -427,4 +477,9 @@ def scoreboard():
 if __name__ == '__main__':
     init_db()
     write_rce_flag()
+    # WERKZEUG_RUN_MAIN is only set in the actual serving process, not the
+    # reloader's watcher process - without this check debug mode would
+    # start two bots.
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        start_credential_bot()
     app.run(debug=True, host='0.0.0.0', port=5005, threaded=True)

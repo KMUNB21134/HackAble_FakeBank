@@ -17,6 +17,10 @@ peek if you're treating this like a challenge).
 - How is your connection to this site protected? Think about what
   someone watching the network between you and the server — not the
   server itself — could actually see.
+- You're not the only one logging in. Something else on this server
+  does too, on its own, every so often, using real credentials it
+  never shows you anywhere. If your connection to the site has the
+  problem above, that's worth paying attention to.
 
 ## The login form
 
