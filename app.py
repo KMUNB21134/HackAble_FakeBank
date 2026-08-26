@@ -417,11 +417,19 @@ def dashboard():
         for row in spending
     ]
 
-    # Points for an SVG line graph, laid out on a 300x100 viewBox.
+    # Points for an SVG line graph, laid out on a 300x100 viewBox. Y is
+    # kept within an 8-92 band (not the full 0-100) so a point's marker
+    # circle (radius 3) never sits flush against the top/bottom edge and
+    # gets clipped by the viewBox - the highest point in any chart has
+    # pct=100 by definition, which would otherwise land it exactly at
+    # y=0.
+    CHART_Y_PAD = 8
     n = len(chart)
     for i, point in enumerate(chart):
         point['x'] = round((i / (n - 1)) * 300, 1) if n > 1 else 150
-        point['y'] = round(100 - point['pct'], 1)
+        point['y'] = round(
+            100 - CHART_Y_PAD - (100 - 2 * CHART_Y_PAD) * point['pct'] / 100, 1
+        )
     chart_points = ' '.join('{},{}'.format(p['x'], p['y']) for p in chart)
 
     transfer = flask.request.args.get('transfer') == '1'
