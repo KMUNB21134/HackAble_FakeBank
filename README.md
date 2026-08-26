@@ -162,11 +162,14 @@ directly instead if you want the database to persist across runs.
   genuinely-issued token, however you got the password, doesn't count.
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
-- **Fake gift card code (`/transfer`)** — entering a valid "gift card
-  number" shows "Transfer successful!" but silently does nothing; no
-  balance is debited or credited. The code is just `md5(today's date)` —
-  the same for everyone, all day, and computable offline without ever
-  signing up for the newsletter. (The scam is the point.)
+- **Unlimited-use gift card code (`/transfer`)** — entering a valid
+  "gift card number" credits the recipient a flat `GIFT_CARD_VALUE`
+  ($250) with no debit to the sender, logged as a real transaction. The
+  code is just `md5(today's date)` — the same for everyone, all day, and
+  computable offline without ever signing up for the newsletter. It also
+  is not single-use or tied to any specific redemption in any way, so
+  the same code can be redeemed over and over, to any recipient, for
+  unlimited free money all day.
 - **No recipient validation (`/transfer`)** — money can be sent to any
   username, real or not; a transfer to a nonexistent user still debits
   the sender and the funds simply vanish.

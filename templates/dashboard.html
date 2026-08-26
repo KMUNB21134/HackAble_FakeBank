@@ -22,7 +22,7 @@
             <p style="color: green;">Transfer successful!</p>
             {% endif %}
 
-            {% if chart %}
+            {% if chart|length > 1 %}
             <div class="spending-chart">
                 <p class="chart-title">Recent spending</p>
                 <div class="chart-line-wrap">

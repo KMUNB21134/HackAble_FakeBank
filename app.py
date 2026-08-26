@@ -138,6 +138,9 @@ def md5_hash(raw_password):
     return hashlib.md5(raw_password.encode()).hexdigest()
 
 
+GIFT_CARD_VALUE = 250.00
+
+
 def daily_gift_code():
     # --- INTENTIONALLY WEAK ---
     # "Secret" gift code is just an MD5 hash of today's date - the same
@@ -636,14 +639,36 @@ def transfer_post():
     if amount <= 0:
         return flask.render_template('transfer.html', error='Amount must be positive.')
 
-    # A "valid" gift code short-circuits the whole transfer - no debit, no
-    # credit, nothing actually moves. The gift card is a scam.
+    if amount > 100000:
+        return flask.render_template(
+            'transfer.html', error='Transfer amount cannot exceed $100,000.'
+        )
+
+    # --- INTENTIONALLY VULNERABLE ---
+    # A valid gift code credits the recipient a fixed $250, logged as a
+    # real transaction just like a normal transfer - no debit to the
+    # sender, since the "value" comes from the card, not their balance.
+    # The actual flaw: the code is not single-use or tied to any
+    # specific redemption. Since it is also guessable offline
+    # (md5(today's date), the same for everyone all day), it can be
+    # redeemed over and over, to any recipient, for unlimited free
+    # money - not a one-time promo at all.
     using_gift_card = gift_number != '' and gift_number == daily_gift_code()
 
     conn = get_db()
 
     if using_gift_card:
         mark_solved('fake_gift_card')
+        conn.execute(
+            'UPDATE users SET balance = balance + ? WHERE username = ?',
+            (GIFT_CARD_VALUE, recipient),
+        )
+        conn.execute(
+            'INSERT INTO transactions (sender, recipient, amount, timestamp, ip_address) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (username, recipient, GIFT_CARD_VALUE, datetime.now().isoformat(), flask.request.remote_addr),
+        )
+        conn.commit()
         conn.close()
         return flask.redirect(flask.url_for('dashboard', transfer=1))
 

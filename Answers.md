@@ -133,9 +133,13 @@ curl -c cookies.txt -b cookies.txt -X POST http://127.0.0.1:5005/transfer \
   --data-urlencode "gift_number=<the computed hash>"
 ```
 
-The transfer shows "successful" but no balance actually moves — the
-scam is the point, and using the real code (not just any string) is
-what marks the challenge solved.
+The recipient's balance actually goes up by $250 (a fixed
+`GIFT_CARD_VALUE`, not whatever you put in `amount`), with no debit to
+you — logged as a real transaction. Using the real code (not just any
+string) is what marks the challenge solved. The deeper flaw: the code
+is not single-use or tied to a specific redemption at all, so the same
+code works over and over, to any recipient, for unlimited free money —
+run the same request again and watch the balance keep climbing.
 
 ---
 
