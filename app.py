@@ -79,8 +79,8 @@ CHALLENGES = [
     {
         'id': 'weak_hashing',
         'title': 'Crack a Password Hash',
-        'difficulty': 3,
-        'hint': "Passwords aren't stored as safely as they should be. If you can get your hands on a hash, offline cracking tools make quick work of the weak ones.",
+        'difficulty': 2,
+        'hint': "Passwords aren't stored as safely as they should be. The login form isn't the only form on this site that takes a username as input - if you can get your hands on a hash somewhere, offline cracking tools make quick work of the weak ones.",
     },
     {
         'id': 'stored_xss',
@@ -377,6 +377,32 @@ def admin_panel():
     mark_solved('hidden_backdoor')
     flask.session['username'] = 'admin@fakebank.com'
     return flask.redirect(flask.url_for('dashboard'))
+
+@app.route('/check-recipient')
+def check_recipient():
+    username = flask.request.args.get('username', '')
+
+    # --- INTENTIONALLY VULNERABLE ---
+    # Same raw-string-interpolation mistake as /login, on a completely
+    # separate feature (a "does this payee exist" preview for the
+    # transfer form). Unlike /login this one echoes the matched column
+    # back directly, so a UNION SELECT here can read any column of any
+    # row - including password hashes - without needing blind/boolean
+    # extraction.
+    query = "SELECT username FROM users WHERE username = '{}'".format(username)
+
+    conn = get_db()
+    try:
+        row = conn.execute(query).fetchone()
+    except sqlite3.Error:
+        conn.close()
+        return flask.jsonify(exists=False)
+    conn.close()
+
+    if row:
+        return flask.jsonify(exists=True, match=row['username'])
+    return flask.jsonify(exists=False)
+
 
 @app.route('/transfer')
 def transfer():

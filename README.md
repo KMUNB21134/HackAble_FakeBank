@@ -54,12 +54,23 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   of what you ask, and sending any message marks the challenge solved -
   a nod to getting real authorization before pentesting anything for
   real.
+- **"Check recipient exists"** — a button on the transfer page that looks
+  up a username before you send it money. A normal, plausible banking
+  feature that happens to be the real solve path for the "Crack a
+  Password Hash" scoreboard challenge (see `/check-recipient` below).
 
 ## Known vulnerabilities (intentional)
 
 - **SQL injection (`/login`)** — the login query is built with raw string
   interpolation instead of parameterized SQL. Try `admin@fakebank.com'--` as the
   username with any password, or `' OR '1'='1`.
+- **SQL injection (`/check-recipient`)** — the "Check recipient exists"
+  button on the transfer page hits this endpoint, which builds its query
+  the same unsafe way as `/login` but echoes the matched column straight
+  back in the response. Unlike `/login` (which only tells you true/false),
+  this one is a direct UNION-based dump: `?username=x' UNION SELECT
+  password FROM users WHERE username='crackme@fakebank.com'-- ` returns
+  that account's raw password hash, ready to crack offline.
 - **Weak, guessable passwords** — top-of-wordlist passwords
   (`password123`, `letmein`, etc.), with no complexity or length
   requirements on `/register` either.

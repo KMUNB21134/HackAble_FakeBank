@@ -17,7 +17,9 @@
             <p class="error">{{ error }}</p>
             {% endif %}
             <form class="login-form" action="/transfer" method="POST">
-                <input type="text" name="recipient" placeholder="Recipient Username" required>
+                <input type="text" name="recipient" id="recipient" placeholder="Recipient Username" required>
+                <button type="button" id="check-recipient-btn" class="secondary-button">Check recipient exists</button>
+                <p id="recipient-status" class="recipient-status"></p>
                 <input type="number" step="0.01" name="amount" placeholder="Amount" required>
                 <input type="password" name="gift_number" placeholder="Gift card number">
                 <button type="submit">Transfer</button>
