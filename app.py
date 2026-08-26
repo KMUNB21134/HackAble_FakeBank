@@ -1,5 +1,6 @@
 import flask
 import hashlib
+import jwt
 import os
 import re
 import secrets
@@ -8,7 +9,8 @@ import threading
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime
+import uuid
+from datetime import datetime, timedelta
 
 app = flask.Flask(__name__)
 app.secret_key = 'not-a-real-secret'  # fine for a local vuln demo, not for prod
@@ -119,6 +121,12 @@ CHALLENGES = [
         'difficulty': 3,
         'hint': "The dashboard has a button nobody can see, for a feature only one specific account is allowed to use. Inspect the page. Then figure out how you have already learned to become someone you are not.",
     },
+    {
+        'id': 'api_token_forgery',
+        'title': 'Forge an API Token',
+        'difficulty': 4,
+        'hint': "There is a small automation API for scripts and monitoring tools, separate from the normal login. It issues a signed token instead of a cookie. Tokens carry their own claim about which algorithm secured them - what happens if you are the one who gets to make that claim? And if the app trusts one particular value to sign things, where else in this project might that same value be sitting in plain sight?",
+    },
 ]
 
 
@@ -192,6 +200,13 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             owner TEXT NOT NULL,
             card_hash TEXT NOT NULL
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS issued_tokens (
+            jti TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            issued_at TEXT NOT NULL
         )
     ''')
     # Seed a couple of accounts so injection has something to find/bypass.
@@ -422,6 +437,110 @@ def view_all_cards():
 
     mark_solved('view_all_cards')
     return flask.render_template('cards.html', cards=cards)
+
+
+API_TOKEN_LIFETIME = timedelta(hours=1)
+
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    # A token-based login for scripts/automation (a monitoring bot, a CI
+    # job) instead of the normal cookie session. Credential check itself
+    # is parameterized/safe - the vulnerability here is entirely in how
+    # /api/balance later trusts a token, not in this route.
+    data = flask.request.get_json(silent=True) or flask.request.form
+    username = (data or {}).get('username', '')
+    password = (data or {}).get('password', '')
+
+    conn = get_db()
+    user = conn.execute(
+        'SELECT * FROM users WHERE username = ? AND password = ?',
+        (username, md5_hash(password)),
+    ).fetchone()
+
+    if not user:
+        conn.close()
+        return flask.jsonify(error='Invalid username or password.'), 401
+
+    now = datetime.utcnow()
+    jti = str(uuid.uuid4())
+    payload = {
+        'username': user['username'],
+        'jti': jti,
+        'iat': now,
+        'exp': now + API_TOKEN_LIFETIME,
+    }
+    token = jwt.encode(payload, app.secret_key, algorithm='HS256')
+
+    conn.execute(
+        'INSERT INTO issued_tokens (jti, username, issued_at) VALUES (?, ?, ?)',
+        (jti, user['username'], now.isoformat()),
+    )
+    conn.commit()
+    conn.close()
+
+    return flask.jsonify(token=token)
+
+
+@app.route('/api/balance')
+def api_balance():
+    auth = flask.request.headers.get('Authorization', '')
+    if not auth.startswith('Bearer '):
+        return flask.jsonify(error='Missing bearer token.'), 401
+    token = auth[len('Bearer '):]
+
+    try:
+        header = jwt.get_unverified_header(token)
+    except jwt.PyJWTError:
+        return flask.jsonify(error='Malformed token.'), 401
+
+    forged = False
+
+    # --- INTENTIONALLY VULNERABLE ---
+    # Trusts the algorithm the token itself claims instead of pinning to
+    # one expected algorithm server-side. A token with alg "none" is
+    # accepted with no signature check at all - /api/login never issues
+    # one, so reaching this branch at all proves forgery.
+    if header.get('alg', '').lower() == 'none':
+        try:
+            payload = jwt.decode(token, options={'verify_signature': False})
+        except jwt.PyJWTError:
+            return flask.jsonify(error='Malformed token.'), 401
+        forged = True
+    else:
+        try:
+            # --- INTENTIONALLY VULNERABLE ---
+            # Signs with app.secret_key, the same hardcoded value used for
+            # session cookies - and it's sitting in this project's public
+            # GitHub source. Anyone who reads it can mint a fully,
+            # correctly signed token for any username without ever
+            # calling /api/login.
+            payload = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+        except jwt.PyJWTError:
+            return flask.jsonify(error='Invalid or expired token.'), 401
+
+        conn = get_db()
+        issued = conn.execute(
+            'SELECT username FROM issued_tokens WHERE jti = ?', (payload.get('jti'),)
+        ).fetchone()
+        conn.close()
+        if not issued or issued['username'] != payload.get('username'):
+            # Correctly signed, but not a token we ever actually issued -
+            # only possible by knowing the signing secret independently.
+            forged = True
+
+    username = payload.get('username')
+    conn = get_db()
+    user = conn.execute('SELECT balance FROM users WHERE username = ?', (username,)).fetchone()
+    conn.close()
+
+    if not user:
+        return flask.jsonify(error='Unknown user.'), 404
+
+    if forged and username == BOT_USERNAME:
+        mark_solved('api_token_forgery')
+
+    return flask.jsonify(username=username, balance=user['balance'])
 
 
 @app.route('/logout')

@@ -37,7 +37,7 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
-  from the UI, like Juice Shop's own Score Board) tracks which of the 10
+  from the UI, like Juice Shop's own Score Board) tracks which of the 11
   challenges below you've actually completed, per browser session. Most
   are detected automatically the moment the exploit condition is met
   server-side; the Werkzeug RCE challenge instead requires pasting in a
@@ -62,6 +62,10 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   up a username before you send it money. A normal, plausible banking
   feature that happens to be the real solve path for the "Crack a
   Password Hash" scoreboard challenge (see `/check-recipient` below).
+- **Automation API (`/api/login`, `/api/balance`)** — a small
+  token-based API for scripts/monitoring, not linked from any page, that
+  issues a JWT instead of a session cookie. See "Forgeable API tokens"
+  below.
 
 ## Known vulnerabilities (intentional)
 
@@ -103,6 +107,26 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   direct consequence of the RCE challenge already having full read/write
   access to the database file. There's no other way to hide that IP —
   it isn't shown or editable anywhere in the normal app.
+- **Forgeable API tokens (`/api/login`, `/api/balance`)** — a small
+  token-based API meant for automation (scripts, monitoring, CI), issuing
+  a JWT instead of the normal session cookie. `/api/balance` is
+  vulnerable two independent ways:
+  1. **`alg: none`** — it trusts whatever algorithm the token's own
+     header claims instead of pinning to one expected algorithm
+     server-side. A token with `{"alg": "none"}` and an empty signature
+     is accepted with no verification at all. Build one by hand (header
+     and payload are just base64url JSON, no library needed) claiming
+     `"username": "TheMainAdmin@fakebank.com"`.
+  2. **Reused signing secret** — tokens are signed with `app.secret_key`,
+     the exact same hardcoded value (`'not-a-real-secret'`) used for
+     session cookies, sitting in this project's public GitHub source. `pip
+     install pyjwt` and sign your own fully valid token with that known
+     key, for any username, without ever calling `/api/login`.
+
+  Example forged request once you have a token either way:
+  ```
+  curl http://localhost:5005/api/balance -H "Authorization: Bearer <token>"
+  ```
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
 - **Fake gift card code (`/transfer`)** — entering a valid "gift card

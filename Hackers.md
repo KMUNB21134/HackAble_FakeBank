@@ -65,6 +65,18 @@ peek if you're treating this like a challenge).
   transfer and want it to look like you never did, think about what
   else it wrote down about where the request came from.
 
+## Not everyone logs in with a browser
+
+- There's a second way into this bank meant for scripts, not people. It
+  hands back something other than the usual cookie. Look at the three
+  parts of what it gives you — the middle one is just readable text if
+  you know how it's encoded, no secret required.
+- The first part of that same thing tells the server how to check it.
+  What if you got to decide that yourself instead of the server?
+- If something signs data with a secret, and that secret is sitting
+  somewhere you already have access to for other reasons on this
+  project, you don't need to break the signature at all.
+
 ## Keeping score
 
 - Somewhere on this site is a page that quietly tracks which of these
