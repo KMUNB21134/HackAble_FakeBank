@@ -25,11 +25,11 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 
 ## Seeded accounts
 
-| Username                | Password      |
-|-------------------------|---------------|
-| `admin@fakebank.com`    | `password123` |
-| `robot@fakebank.com`    | `beepboop123` |
-| `crackme@fakebank.com`  | `letmein`     |
+| Username                       | Password      |
+|--------------------------------|---------------|
+| `internAdmin@fakebank.com`     | `password123` |
+| `robot@fakebank.com`           | `beepboop123` |
+| `crackme@fakebank.com`         | `letmein`     |
 
 ## Features
 
@@ -62,8 +62,8 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 ## Known vulnerabilities (intentional)
 
 - **SQL injection (`/login`)** — the login query is built with raw string
-  interpolation instead of parameterized SQL. Try `admin@fakebank.com'--` as the
-  username with any password, or `' OR '1'='1`.
+  interpolation instead of parameterized SQL. Try `internAdmin@fakebank.com'--`
+  as the username with any password, or `' OR '1'='1`.
 - **SQL injection (`/check-recipient`)** — the "Check recipient exists"
   button on the transfer page hits this endpoint, which builds its query
   the same unsafe way as `/login` but echoes the matched column straight
@@ -77,7 +77,8 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
 - **No brute-force protection** — `/login` has no rate limiting, lockout,
   or CAPTCHA, so it's crackable with tools like Hydra.
 - **Hardcoded backdoor route (`/admin_panel1234510`)** — visiting it logs
-  anyone in as `admin@fakebank.com` with zero credentials and no auth check.
+  anyone in as `internAdmin@fakebank.com` with zero credentials and no auth
+  check.
 - **`robots.txt` leaks the backdoor** — `Disallow: /admin_panel1234510` in
   `static/robots.txt` hands the "hidden" path to anyone who reads it.
 - **Debug mode enabled (Werkzeug console RCE)** — `app.run(debug=True,
@@ -109,11 +110,12 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   straight off the wire with a packet capture tool like Wireshark or
   `tcpdump` — no cracking required, the password is sent in plaintext
   before the server ever hashes it. A background thread
-  (`start_credential_bot()`) logs the `courier@fakebank.com` account in
-  over plain HTTP every 20 seconds using a strong, never-displayed
+  (`start_credential_bot()`) logs the `TheMainAdmin@fakebank.com` account
+  in over plain HTTP every 20 seconds using a strong, never-displayed
   password, purely so there's always real cleartext traffic to capture —
   the "Sniff Credentials Off the Wire" scoreboard challenge. Its
-  password isn't listed here on purpose; capture it.
+  password isn't listed here on purpose; capture it. It also holds the
+  largest balance in the bank, matching its name.
 
 ## Disclaimer
 

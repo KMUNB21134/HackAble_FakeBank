@@ -26,15 +26,15 @@ SCOREBOARD_PATH = '/scoreboard93217'
 # on the wire while this fires can read it straight off, no cracking
 # needed. The password is strong on purpose so brute-forcing/wordlists
 # will not get you there - only watching the wire will.
-COURIER_USERNAME = 'courier@fakebank.com'
-COURIER_PASSWORD = 'Xk9$mQ2vLp8!'
-COURIER_LOGIN_INTERVAL = 20  # seconds
+BOT_USERNAME = 'TheMainAdmin@fakebank.com'
+BOT_PASSWORD = 'Xk9$mQ2vLp8!'
+BOT_LOGIN_INTERVAL = 20  # seconds
 
 
-def _courier_login_once():
+def _bot_login_once():
     data = urllib.parse.urlencode({
-        'username': COURIER_USERNAME,
-        'password': COURIER_PASSWORD,
+        'username': BOT_USERNAME,
+        'password': BOT_PASSWORD,
     }).encode()
     try:
         urllib.request.urlopen('http://127.0.0.1:5005/login', data=data, timeout=5)
@@ -45,8 +45,8 @@ def _courier_login_once():
 def start_credential_bot():
     def loop():
         while True:
-            time.sleep(COURIER_LOGIN_INTERVAL)
-            _courier_login_once()
+            time.sleep(BOT_LOGIN_INTERVAL)
+            _bot_login_once()
 
     threading.Thread(target=loop, daemon=True).start()
 
@@ -179,7 +179,7 @@ def init_db():
         conn.executemany(
             'INSERT INTO users (username, password, balance) VALUES (?, ?, ?)',
             [
-                ('admin@fakebank.com', md5_hash('password123'), 1337133.70),
+                ('internAdmin@fakebank.com', md5_hash('password123'), 1337133.70),
                 ('robot@fakebank.com', md5_hash('beepboop123'), 4200.00),
                 # Weak, wordlist-top password on purpose - cracking this
                 # offline (John/hashcat) and logging in with it is the
@@ -187,8 +187,9 @@ def init_db():
                 ('crackme@fakebank.com', md5_hash('letmein'), 13.37),
                 # Strong password on purpose - the credential_bot logs this
                 # one in periodically over plain HTTP, so the only realistic
-                # way to obtain it is packet capture, not cracking.
-                (COURIER_USERNAME, md5_hash(COURIER_PASSWORD), 640.25),
+                # way to obtain it is packet capture, not cracking. Highest
+                # balance in the bank, matching the account name.
+                (BOT_USERNAME, md5_hash(BOT_PASSWORD), 25000000.00),
             ],
         )
     conn.commit()
@@ -257,7 +258,7 @@ def login():
 
     # --- INTENTIONALLY VULNERABLE ---
     # Raw string interpolation into SQL instead of parameterized query.
-    # e.g. username = admin@fakebank.com' -- to bypass password, or ' OR '1'='1 to
+    # e.g. username = internAdmin@fakebank.com' -- to bypass password, or ' OR '1'='1 to
     # log in as the first user / dump results depending on how it's used.
     query = "SELECT * FROM users WHERE username = '{}' AND password = '{}'".format(
         username, md5_hash(password)
@@ -284,10 +285,10 @@ def login():
             # Real password match on the crackme account means they
             # actually cracked the hash offline.
             mark_solved('weak_hashing')
-        elif user['username'] == COURIER_USERNAME:
-            # Real password match on the courier account, whose strong
-            # password is never shown anywhere, means it was captured off
-            # the wire while credential_bot logged it in.
+        elif user['username'] == BOT_USERNAME:
+            # Real password match on this account, whose strong password
+            # is never shown anywhere, means it was captured off the wire
+            # while credential_bot logged it in.
             mark_solved('cleartext_creds')
         return flask.redirect(flask.url_for('dashboard'))
 
@@ -371,11 +372,11 @@ def logout():
 
 # --- INTENTIONALLY VULNERABLE ---
 # Hidden/hardcoded backdoor route: anyone who finds this URL is logged in
-# as admin with zero credentials, no auth check at all.
+# as internAdmin with zero credentials, no auth check at all.
 @app.route('/admin_panel1234510')
 def admin_panel():
     mark_solved('hidden_backdoor')
-    flask.session['username'] = 'admin@fakebank.com'
+    flask.session['username'] = 'internAdmin@fakebank.com'
     return flask.redirect(flask.url_for('dashboard'))
 
 @app.route('/check-recipient')
