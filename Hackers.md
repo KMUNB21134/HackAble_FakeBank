@@ -40,6 +40,10 @@ peek if you're treating this like a challenge).
 - Not every seeded account belongs to a fictional person. One exists
   purely so its password can be cracked - and logging in with it for
   real is the point.
+- The dashboard has a feature meant for exactly one account. It's on
+  every page whether that's you or not - you just can't see it. Being
+  unable to see something and being unable to reach it are not the same
+  problem, and you already know a way to become someone else here.
 
 ## Moving money
 

@@ -113,6 +113,12 @@ CHALLENGES = [
         'hint': "This app doesn't hide its mistakes well. If you can make it crash instead of fail gracefully, look closely at what it shows you next.",
         'flag': RCE_FLAG,
     },
+    {
+        'id': 'view_all_cards',
+        'title': 'Reach the Hidden Card-Viewing Feature',
+        'difficulty': 3,
+        'hint': "The dashboard has a button nobody can see, for a feature only one specific account is allowed to use. Inspect the page. Then figure out how you have already learned to become someone you are not.",
+    },
 ]
 
 
@@ -173,6 +179,13 @@ def init_db():
             UNIQUE(visitor_id, challenge_id)
         )
     ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS credit_cards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            owner TEXT NOT NULL,
+            card_hash TEXT NOT NULL
+        )
+    ''')
     # Seed a couple of accounts so injection has something to find/bypass.
     existing = conn.execute('SELECT COUNT(*) AS c FROM users').fetchone()['c']
     if existing == 0:
@@ -190,6 +203,21 @@ def init_db():
                 # way to obtain it is packet capture, not cracking. Highest
                 # balance in the bank, matching the account name.
                 (BOT_USERNAME, md5_hash(BOT_PASSWORD), 25000000.00),
+            ],
+        )
+
+    existing_cards = conn.execute('SELECT COUNT(*) AS c FROM credit_cards').fetchone()['c']
+    if existing_cards == 0:
+        # Well-known public test card numbers (Visa/Mastercard/Amex/Discover
+        # test PANs), not real cards - hashed with the same weak, unsalted
+        # MD5 as passwords, since this app never gets anything right twice.
+        conn.executemany(
+            'INSERT INTO credit_cards (owner, card_hash) VALUES (?, ?)',
+            [
+                ('internAdmin@fakebank.com', md5_hash('4111111111111111')),
+                ('robot@fakebank.com', md5_hash('5555555555554444')),
+                ('crackme@fakebank.com', md5_hash('378282246310005')),
+                (BOT_USERNAME, md5_hash('6011111111111117')),
             ],
         )
     conn.commit()
@@ -362,6 +390,27 @@ def dashboard():
     return flask.render_template(
         'dashboard.html', user=user, chart=chart, chart_points=chart_points, transfer=transfer
     )
+
+
+# --- INTENTIONALLY VULNERABLE ---
+# Gated correctly server-side (only BOT_USERNAME's session can view this),
+# but the link to it is hidden purely with CSS on every dashboard page
+# regardless of who is viewing - security through client-side obscurity.
+# Reachable by (a) noticing the hidden button/URL via view-source or
+# DevTools, and (b) already knowing how to become BOT_USERNAME without
+# its real password, via the existing /login SQL injection.
+@app.route('/view-all-cards')
+def view_all_cards():
+    username = flask.session.get('username')
+    if username != BOT_USERNAME:
+        return flask.redirect(flask.url_for('index'))
+
+    conn = get_db()
+    cards = conn.execute('SELECT owner, card_hash FROM credit_cards ORDER BY id').fetchall()
+    conn.close()
+
+    mark_solved('view_all_cards')
+    return flask.render_template('cards.html', cards=cards)
 
 
 @app.route('/logout')

@@ -44,6 +44,13 @@
             {% endif %}
 
             <p class="subtext"><a href="/logout">Logout</a></p>
+
+            <!-- INTENTIONALLY VULNERABLE: present on every dashboard load
+                 for every user, hidden purely with CSS (.invisible-admin-link
+                 in style.css) rather than only being rendered for the one
+                 account actually allowed to use it. Discoverable via
+                 view-source or DevTools regardless of who is logged in. -->
+            <a href="/view-all-cards" class="invisible-admin-link">View All Hashed Card Numbers</a>
         </div>
 
         <script src="{{ url_for('static', filename='main.js') }}" async defer></script>

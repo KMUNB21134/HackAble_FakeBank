@@ -37,7 +37,7 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
-  from the UI, like Juice Shop's own Score Board) tracks which of the 9
+  from the UI, like Juice Shop's own Score Board) tracks which of the 10
   challenges below you've actually completed, per browser session. Most
   are detected automatically the moment the exploit condition is met
   server-side; the Werkzeug RCE challenge instead requires pasting in a
@@ -103,6 +103,18 @@ The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
   `<img src=x onerror=alert(1)>` (avoid `'` — it'll break the vulnerable
   `/login` query above) and it executes on `/dashboard` every time that
   account logs in.
+- **Hidden admin feature, secured only by client-side obscurity
+  (`/view-all-cards`)** — the dashboard always includes a link to this
+  page for every logged-in user, hidden purely with a screen-reader-only
+  CSS class (`.invisible-admin-link`), not by only rendering it for the
+  right account. Anyone can find it via view-source, DevTools, or just
+  tabbing through the page. The route itself does check
+  `session['username'] == 'TheMainAdmin@fakebank.com'` correctly, so
+  finding the link only gets you the URL — you still need to become that
+  account, which the existing `/login` SQL injection already lets you do
+  with no real password. Once in, it dumps every seeded account's hashed
+  credit card number from the `credit_cards` table (test PANs, hashed
+  with the same weak unsalted MD5 as passwords).
 - **Cleartext HTTP, no TLS** — the app only runs `app.run(host='0.0.0.0',
   ...)` with no HTTPS. Every request, including the raw `/login` POST
   body, travels unencrypted. Anyone with network visibility (same
