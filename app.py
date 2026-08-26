@@ -462,6 +462,12 @@ def api_login():
         conn.close()
         return flask.jsonify(error='Invalid username or password.'), 401
 
+    if user['username'] == BOT_USERNAME:
+        # Real password match here means it was captured off the wire,
+        # same as the cookie-based /login - this route is just another
+        # way to use it, so it should mark the same challenge solved.
+        mark_solved('cleartext_creds')
+
     now = datetime.utcnow()
     jti = str(uuid.uuid4())
     payload = {
