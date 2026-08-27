@@ -115,7 +115,7 @@ on a machine with real files and credentials on it.
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
-  from the UI, like Juice Shop's own Score Board) tracks which of the 11
+  from the UI, like Juice Shop's own Score Board) tracks which of the 12
   challenges below you've actually completed, per browser session. Most
   are detected automatically the moment the exploit condition is met
   server-side; the Werkzeug RCE challenge instead requires pasting in a
@@ -157,6 +157,15 @@ on a machine with real files and credentials on it.
   this one is a direct UNION-based dump: `?username=x' UNION SELECT
   password FROM users WHERE username='crackme@fakebank.com'-- ` returns
   that account's raw password hash, ready to crack offline.
+- **DOM-based XSS (`/check-recipient` result rendering)** — `static/main.js`
+  writes that same injectable response into the page with `innerHTML`
+  instead of `textContent`. UNION-inject an HTML/JS payload as the
+  "column" being returned — e.g. `?username=x' UNION SELECT '<img
+  src=x onerror=alert(1)>'-- ` — and it executes in the browser the
+  moment the fetch resolves, no page reload needed. Distinct from the
+  server-side stored XSS below: that one relies on Jinja's `| safe`
+  filter on a stored username, this one is the client-side JS choosing
+  to parse an already-injectable API response as HTML.
 - **Weak, guessable passwords** — top-of-wordlist passwords
   (`password123`, `letmein`, etc.), with no complexity or length
   requirements on `/register` either.

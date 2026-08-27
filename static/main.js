@@ -15,7 +15,13 @@ function initRecipientCheck() {
         fetch('/check-recipient?username=' + encodeURIComponent(username))
             .then(function (res) { return res.json(); })
             .then(function (data) {
-                status.textContent = data.exists
+                // --- INTENTIONALLY VULNERABLE ---
+                // innerHTML instead of textContent. /check-recipient's
+                // server-side SQL injection already lets an attacker
+                // control this response (see app.py) - rendering it as
+                // HTML instead of plain text turns that into DOM-based
+                // XSS too, not just a data leak.
+                status.innerHTML = data.exists
                     ? 'Recipient found: ' + data.match
                     : 'No account with that username.';
             })

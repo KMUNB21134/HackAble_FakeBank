@@ -40,6 +40,9 @@ peek if you're treating this like a challenge).
 - The login form isn't the only place on this site that takes a
   username as input. Whatever trick worked there might work somewhere
   else too — and that other place might not just tell you yes or no.
+- That other place answers you without reloading the page. Whatever it
+  sends back has to get drawn onto the page somehow — go look at how,
+  not just at what it says.
 - Not every seeded account belongs to a fictional person. One exists
   purely so its password can be cracked - and logging in with it for
   real is the point.

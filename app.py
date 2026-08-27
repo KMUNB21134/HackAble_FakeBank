@@ -86,6 +86,12 @@ CHALLENGES = [
         'hint': "Passwords aren't stored as safely as they should be. The login form isn't the only form on this site that takes a username as input - if you can get your hands on a hash somewhere, offline cracking tools make quick work of the weak ones.",
     },
     {
+        'id': 'dom_xss_recipient',
+        'title': 'DOM-Based XSS via Recipient Check',
+        'difficulty': 3,
+        'hint': "That injectable check on the transfer page answers you in the page itself, without a full reload. Look at how the JavaScript actually writes that answer onto the page, not just what the answer says.",
+    },
+    {
         'id': 'stored_xss',
         'title': 'Stored XSS via Username',
         'difficulty': 2,
@@ -609,6 +615,12 @@ def check_recipient():
     conn.close()
 
     if row:
+        # Same shape check as the stored_xss detection on /dashboard - a
+        # value that looks like an HTML/JS payload came back from this
+        # endpoint, which static/main.js then renders with innerHTML
+        # instead of textContent, turning the leak into DOM-based XSS.
+        if re.search(r'[<>]|onerror\s*=|<script', row['username'], re.IGNORECASE):
+            mark_solved('dom_xss_recipient')
         return flask.jsonify(exists=True, match=row['username'])
     return flask.jsonify(exists=False)
 

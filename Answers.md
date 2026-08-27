@@ -35,7 +35,7 @@ curl -c cookies.txt -b cookies.txt http://127.0.0.1:5005/robots.txt
 ```
 
 It also happens to leak the hardcoded backdoor path (`/admin_panel1234510`),
-which challenge 6 needs.
+which challenge 8 needs.
 
 ---
 
@@ -90,7 +90,32 @@ bypass, that marks this one solved.
 
 ---
 
-## 5. Stored XSS via Username (★★☆☆☆)
+## 5. DOM-Based XSS via Recipient Check (★★★☆☆)
+
+Same `/check-recipient` endpoint as challenge 4, different bug.
+`static/main.js` writes the JSON response's `match` field into the page
+with `innerHTML` instead of `textContent` — so instead of dumping a
+hash, UNION-inject an HTML/JS payload as the returned value:
+
+```
+curl -G http://127.0.0.1:5005/check-recipient \
+  --data-urlencode "username=x' UNION SELECT '<img src=x onerror=alert(1)>'-- "
+```
+
+The JSON response contains that literal payload. Do the same thing
+through the actual UI — type it into the "Recipient Username" field on
+the transfer page and click **"Check recipient exists"** — and it
+executes in the browser the moment the `fetch()` call resolves, no
+page reload needed. Detected server-side the same way as stored XSS
+(challenge 6): if the value `/check-recipient` is about to return
+matches an XSS-payload-like pattern, the challenge is marked solved
+right there in `check_recipient()` — the server can observe the
+dangerous value being returned even though it can't observe your
+browser actually executing it.
+
+---
+
+## 6. Stored XSS via Username (★★☆☆☆)
 
 The dashboard renders your username with Jinja's `| safe` filter,
 disabling auto-escaping. Register an account whose username is an
@@ -113,7 +138,7 @@ matching the username against an XSS-payload-like pattern).
 
 ---
 
-## 6. Compute the Daily Gift Card Code (★★☆☆☆)
+## 7. Compute the Daily Gift Card Code (★★☆☆☆)
 
 The transfer page advertises a "secret" gift card code you get by
 signing up for a newsletter. It's fake — the real code is just
@@ -143,7 +168,7 @@ run the same request again and watch the balance keep climbing.
 
 ---
 
-## 7. Find the Hardcoded Backdoor (★★☆☆☆)
+## 8. Find the Hardcoded Backdoor (★★☆☆☆)
 
 Just visit it. `/robots.txt` (challenge 2) names the exact path:
 
@@ -156,7 +181,7 @@ auth check at all.
 
 ---
 
-## 8. Sniff Credentials Off the Wire (★★★☆☆)
+## 9. Sniff Credentials Off the Wire (★★★☆☆)
 
 This app only ever serves plain HTTP — every `/login` POST, including
 the password, travels the network unencrypted. A background thread
@@ -183,7 +208,7 @@ curl -c cookies.txt -b cookies.txt -X POST http://127.0.0.1:5005/login \
 
 ---
 
-## 9. Remote Code Execution via Debug Console (★★★★★)
+## 10. Remote Code Execution via Debug Console (★★★★★)
 
 `app.run(debug=True, ...)` means any uncaught exception serves Werkzeug's
 interactive debugger — a live Python shell per stack frame, gated only
@@ -258,7 +283,7 @@ protection at all.
 
 ---
 
-## 10. Reach the Hidden Card-Viewing Feature (★★★☆☆)
+## 11. Reach the Hidden Card-Viewing Feature (★★★☆☆)
 
 The dashboard always includes a link to `/view-all-cards`, for **every**
 logged-in user, hidden with a screen-reader-only CSS class
@@ -285,7 +310,7 @@ Dumps every seeded account's hashed (MD5) credit card number.
 
 ---
 
-## 11. Forge an API Token (★★★★☆)
+## 12. Forge an API Token (★★★★☆)
 
 `/api/login` and `/api/balance` are a token-based API for
 scripts/automation, separate from the cookie session, issuing a JWT
@@ -328,7 +353,7 @@ working entirely client-side in a browser via `fetch()` and
 `crypto.subtle` (no Python needed at all for Path B either — HMAC-SHA256
 is native to the browser).
 
-If you already captured `TheMainAdmin`'s real password via challenge 8,
+If you already captured `TheMainAdmin`'s real password via challenge 9,
 `/api/login` with the real password issues a fully legitimate token
 instead — that's expected, not a shortcut around anything, and it
 doesn't mark this specific challenge solved (only a token that was
@@ -348,5 +373,5 @@ never actually issued by the server does, tracked via the
 - **Leaked `app.secret_key` without reading GitHub:** `flask-unsign`
   can crack it directly from any session cookie you already have,
   offline, against a wordlist — no source access needed. Or, once you
-  have RCE (challenge 9), just read `app.secret_key` out of the running
+  have RCE (challenge 10), just read `app.secret_key` out of the running
   process directly.
