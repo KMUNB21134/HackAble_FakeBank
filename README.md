@@ -36,6 +36,34 @@ running it in a container instead of directly on your machine is
 worth doing. All setup happens at build time; running the image needs
 nothing else installed:
 
+**On macOS without Docker Desktop, the easiest path is `./colima.sh`.**
+It uses [Colima](https://github.com/abiosoft/colima) - a lightweight,
+fully command-line container runtime, no GUI app required - and
+handles everything: installing `colima`/`docker` via Homebrew if
+missing, starting the Colima VM if it is not already running, building
+the image, and running it. Ctrl+C (or `kill` from anywhere) stops and
+removes the container cleanly.
+
+```bash
+./colima.sh        # reachable only from this machine (127.0.0.1)
+./colima.sh --lan  # reachable from other devices on your WiFi
+```
+
+Colima and the built image are left in place between runs - tearing
+those down would mean rebuilding the VM from scratch (a few minutes)
+every single time for no benefit. For a full teardown when you are
+done for good:
+
+```bash
+docker rmi fakebank
+colima stop && colima delete -f
+brew uninstall colima docker lima
+```
+
+Or, if you already have Docker running some other way (Docker Desktop,
+a Linux host, an existing daemon), the two commands `colima.sh` wraps
+work the same on their own:
+
 ```bash
 docker build -t fakebank .
 docker run --rm -p 127.0.0.1:5005:5005 fakebank
