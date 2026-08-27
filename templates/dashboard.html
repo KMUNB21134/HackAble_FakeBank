@@ -13,15 +13,6 @@
     </head>
     <body>
         <div class="card dashboard-card">
-            <!-- INTENTIONALLY VULNERABLE: | safe disables Jinja's auto-escaping,
-                 so a username containing HTML/JS renders as-is (stored XSS). -->
-            <h1>Welcome, {{ user['username'] | safe }}!</h1>
-            <p class="balance">Balance: ${{ '%.2f' | format(user['balance']) }}</p>
-            <button type="button" onclick="window.location.href = '/transfer'">Transfer</button>
-            {% if transfer %}
-            <p style="color: green;">Transfer successful!</p>
-            {% endif %}
-
             {% if chart|length > 1 %}
             <div class="spending-chart">
                 <p class="chart-title">Recent spending</p>
@@ -41,6 +32,16 @@
                     {% endfor %}
                 </div>
             </div>
+            {% endif %}
+
+            <!-- INTENTIONALLY VULNERABLE: | safe disables Jinja's auto-escaping,
+                 so a username containing HTML/JS renders as-is (stored XSS). -->
+            <hr>
+            <h1>Welcome, {{ user['username'] | safe }}!</h1>
+            <p class="balance">Balance: ${{ '%.2f' | format(user['balance']) }}</p>
+            <button type="button" onclick="window.location.href = '/transfer'">Transfer</button>
+            {% if transfer %}
+            <p style="color: green;">Transfer successful!</p>
             {% endif %}
 
             <p class="subtext"><a href="/logout">Logout</a></p>

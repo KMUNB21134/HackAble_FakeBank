@@ -226,10 +226,8 @@ button:hover {
 }
 
 .chart-line-wrap {
-    height: 140px;
-    padding: 10px;
-    background-color: #f4f6f8;
-    border-radius: 8px;
+    height: 300px;
+    padding: 10px 0;
 }
 
 .chart-line {
