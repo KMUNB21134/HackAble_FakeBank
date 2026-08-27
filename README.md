@@ -60,9 +60,20 @@ colima stop && colima delete -f
 brew uninstall colima docker lima
 ```
 
+**On Linux (including Raspberry Pi OS), use `./docker-linux.sh`
+instead.** Docker runs natively on Linux - no VM layer needed the way
+Colima provides one on macOS - so this installs Docker via `apt` if
+missing and otherwise works exactly like `colima.sh`, same `--lan`
+flag included:
+
+```bash
+./docker-linux.sh        # reachable only from this machine (127.0.0.1)
+./docker-linux.sh --lan  # reachable from other devices on your network
+```
+
 Or, if you already have Docker running some other way (Docker Desktop,
-a Linux host, an existing daemon), the two commands `colima.sh` wraps
-work the same on their own:
+an existing Linux daemon), the two commands both scripts wrap work the
+same on their own:
 
 ```bash
 docker build -t fakebank .
