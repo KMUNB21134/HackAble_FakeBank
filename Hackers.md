@@ -37,6 +37,9 @@ peek if you're treating this like a challenge).
 - If you ever get a look at how passwords are stored, don't just note
   *that* they're hashed — look closely at what the stored value itself
   looks like.
+- The login form isn't the only place on this site that takes a
+  username as input. Whatever trick worked there might work somewhere
+  else too — and that other place might not just tell you yes or no.
 - Not every seeded account belongs to a fictional person. One exists
   purely so its password can be cracked - and logging in with it for
   real is the point.
