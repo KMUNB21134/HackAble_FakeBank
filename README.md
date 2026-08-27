@@ -28,6 +28,40 @@ Run it directly in a terminal rather than backgrounding it, so Ctrl+C
 reaches it normally. You can still run `.venv/bin/python app.py`
 directly instead if you want the database to persist across runs.
 
+### Running in Docker
+
+Given the Werkzeug RCE challenge is genuine, arbitrary code execution
+as whatever OS user runs this - not sandboxed to the app in any way -
+running it in a container instead of directly on your machine is
+worth doing. All setup happens at build time; running the image needs
+nothing else installed:
+
+```bash
+docker build -t fakebank .
+docker run --rm -p 127.0.0.1:5005:5005 fakebank
+```
+
+That keeps the container reachable only from your own machine, on a
+throwaway filesystem that disappears with the container - `docker rm`
+(or just letting `--rm` do it on exit) wipes `fakebank.db` and
+`.rce_flag` along with it, same effect as `run.sh` but for free. Two
+things undo the isolation, so avoid them unless you mean to:
+
+- **Don't mount a host volume in** (e.g. `-v $(pwd):/app` for
+  live-reload convenience) - whatever path you mount becomes directly
+  writable from inside the container, meaning RCE there reaches those
+  real host files.
+- **Don't publish beyond localhost** (`-p 5005:5005` instead of
+  `-p 127.0.0.1:5005:5005`) unless you deliberately want the container
+  reachable from your network - for a supervised multi-person
+  workshop, for example.
+
+Container isolation is not an absolute security boundary (container
+escapes exist, generally requiring `--privileged` or an exposed Docker
+socket - neither of which this needs), but for practicing against a
+genuine RCE, it's a meaningfully safer default than running directly
+on a machine with real files and credentials on it.
+
 ## Seeded accounts
 
 | Username                       | Password      |

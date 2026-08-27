@@ -1,0 +1,10 @@
+.venv/
+.git/
+__pycache__/
+*.pyc
+fakebank.db
+fakebank.db-journal
+fakebank.db-wal
+fakebank.db-shm
+.rce_flag
+.DS_Store
