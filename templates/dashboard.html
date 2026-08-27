@@ -32,11 +32,11 @@
                     {% endfor %}
                 </div>
             </div>
+            <hr>
             {% endif %}
 
             <!-- INTENTIONALLY VULNERABLE: | safe disables Jinja's auto-escaping,
                  so a username containing HTML/JS renders as-is (stored XSS). -->
-            <hr>
             <h1>Welcome, {{ user['username'] | safe }}!</h1>
             <p class="balance">Balance: ${{ '%.2f' | format(user['balance']) }}</p>
             <button type="button" onclick="window.location.href = '/transfer'">Transfer</button>
