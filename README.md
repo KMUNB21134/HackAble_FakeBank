@@ -21,12 +21,17 @@ python3 -m venv .venv
 ```
 
 The app starts on `http://0.0.0.0:5005/` and creates `fakebank.db`
-(SQLite) on first run, seeded with a few accounts. `run.sh` removes
-everything the app generated at runtime (`fakebank.db` and its WAL
-sidecar files, `.rce_flag`) once it stops, so each run starts clean.
-Run it directly in a terminal rather than backgrounding it, so Ctrl+C
-reaches it normally. You can still run `.venv/bin/python app.py`
-directly instead if you want the database to persist across runs.
+(SQLite) on first run, seeded with a few accounts. `run.sh` also starts a
+second process, `new_api.py` (a FastAPI app bound to `127.0.0.1:8000`
+only, reachable exclusively through a proxy route on the main app — see
+"Automation API v2" below), and removes everything both generate at
+runtime (`fakebank.db` and its WAL sidecar files, `.rce_flag`) once it
+stops, so each run starts clean. Run it directly in a terminal rather
+than backgrounding it, so Ctrl+C reaches it normally. You can still run
+`.venv/bin/python app.py` directly instead if you want the database to
+persist across runs, though in that case you'll need to start
+`new_api.py` yourself (`.venv/bin/uvicorn new_api:app --host 127.0.0.1
+--port 8000`) for the v2 API to work.
 
 ### Running in Docker
 
@@ -115,7 +120,7 @@ on a machine with real files and credentials on it.
   your last 7 outgoing transfers (date + amount), built from a
   `transactions` table logged on every real transfer.
 - **Hidden challenge scoreboard** — `/scoreboard93217` (deliberately unlinked
-  from the UI, like Juice Shop's own Score Board) tracks which of the 12
+  from the UI, like Juice Shop's own Score Board) tracks which of the 13
   challenges below you've actually completed, per browser session. Most
   are detected automatically the moment the exploit condition is met
   server-side; the Werkzeug RCE challenge instead requires pasting in a
@@ -140,10 +145,17 @@ on a machine with real files and credentials on it.
   up a username before you send it money. A normal, plausible banking
   feature that happens to be the real solve path for the "Crack a
   Password Hash" scoreboard challenge (see `/check-recipient` below).
-- **Automation API (`/api/login`, `/api/balance`)** — a small
+- **Automation API v1 (`/api/login`, `/api/balance`)** — a small
   token-based API for scripts/monitoring, not linked from any page, that
-  issues a JWT instead of a session cookie. See "Forgeable API tokens"
-  below.
+  issues a JWT instead of a session cookie. Now marked deprecated in its
+  own response (in favor of the v2 API below) but still fully functional.
+  See "Forgeable API tokens" below.
+- **Automation API v2 (`/<username>/new/api/...`)** — a second, genuinely
+  separate process (`new_api.py`, a FastAPI app on `127.0.0.1:8000`,
+  reachable only through a proxy route in `app.py`). Real login/balance
+  for any account, plus an admin-only `/admin/dump` endpoint that returns
+  every user's password hash and every credit card hash. See "Timing
+  side-channel on the v2 admin key" below.
 
 ## Known vulnerabilities (intentional)
 
@@ -242,6 +254,32 @@ on a machine with real files and credentials on it.
   scoreboard only credits the "Forge an API Token" challenge for a token
   that was never actually issued (see `issued_tokens` in `app.py`) - a
   genuinely-issued token, however you got the password, doesn't count.
+- **Timing side-channel on the v2 admin key
+  (`/<username>/new/api/admin/dump`)** — the newer automation API
+  (`new_api.py`, a separate FastAPI process on `127.0.0.1:8000`, reachable
+  only through the proxy route in `app.py`) fixes both `/api/*` bugs above:
+  `/login` and `/balance` issue and check real, random, server-side-tracked
+  bearer tokens, not a forgeable JWT. `/admin/dump` (which returns every
+  user's password hash and every credit card hash) is instead gated by
+  `fastapi.security.APIKeyHeader` — a real FastAPI auth class, so a request
+  with no `X-Admin-Key` header gets a genuine `401`/`403` straight from
+  FastAPI itself, same as any properly secured endpoint would.
+
+  The bug: the key comparison isn't constant-time. It's a hand-rolled
+  character-by-character loop (`_leaky_compare` in `new_api.py`) instead of
+  `secrets.compare_digest` — exactly the anti-pattern FastAPI's own docs
+  warn about for `HTTPBasic`/`APIKeyHeader` credentials — and it bails out
+  the instant it hits a wrong character. That means a guess sharing a
+  longer correct prefix with the real key takes measurably longer to get
+  rejected. Discovery: hit `/<username>/new/api/openapi.json` (FastAPI's
+  auto-generated schema, also proxied straight through) to see every
+  endpoint on this API and the exact header name (`X-Admin-Key`) without
+  reading any source. Exploiting it means brute-forcing the 16-character
+  hex key one position at a time — for each of the 16 hex characters, send
+  a guess with that character in the current position (rest padded), time
+  the response, and keep whichever one took longest; repeat with that
+  character locked in for the next position. See `Answers.md` for a
+  working script.
 - **Weak password hashing** — passwords are stored as unsalted MD5 hashes,
   crackable with tools like John the Ripper or hashcat.
 - **Unlimited-use gift card code (`/transfer`)** — entering a valid

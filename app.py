@@ -4,6 +4,7 @@ import hashlib
 import jwt
 import os
 import re
+import requests
 import secrets
 import sqlite3
 import threading
@@ -133,6 +134,12 @@ CHALLENGES = [
         'title': 'Forge an API Token',
         'difficulty': 4,
         'hint': "There is a small automation API for scripts and monitoring tools, separate from the normal login. It issues a signed token instead of a cookie. Tokens carry their own claim about which algorithm secured them - what happens if you are the one who gets to make that claim? And if the app trusts one particular value to sign things, where else in this project might that same value be sitting in plain sight?",
+    },
+    {
+        'id': 'admin_dump_api',
+        'title': 'Dump the Entire Database via the Newer API',
+        'difficulty': 5,
+        'hint': "The old automation API isn't the only one anymore - it says so itself. The new one doesn't hand out the kind of token you're used to cracking, and one path on it wants a key nobody ever gave you. Ask for it without one and see exactly what it's called. Then ask yourself: when a wrong guess gets rejected, does every wrong guess take the same amount of time?",
     },
 ]
 
@@ -514,7 +521,10 @@ def api_login():
     conn.commit()
     conn.close()
 
-    return flask.jsonify(token=token)
+    return flask.jsonify(
+        token=token,
+        note='This API is deprecated in favor of a newer automation API. This one will keep working, but see the newer one for anything admin-related.',
+    )
 
 
 @app.route('/api/balance')
@@ -578,9 +588,52 @@ def api_balance():
     return flask.jsonify(username=username, balance=user['balance'])
 
 
+NEW_API_BASE = 'http://127.0.0.1:8000'
+
+
+# --- INTENTIONALLY VULNERABLE (by way of what it fronts) ---
+# Pure reverse proxy in front of new_api.py, a second automation API
+# running as its own process on 127.0.0.1:8000 - unreachable except through
+# this route. <username> is captured but never used for anything; it's
+# only there to make the URL look personalized. The proxied request's own
+# headers (its bearer token, or the admin key /admin/dump wants) are the
+# only thing that matters - see new_api.py for the actual vulnerability
+# this fronts.
+@app.route('/<username>/new/api/<path:subpath>', methods=['GET', 'POST'])
+def new_api_proxy(username, subpath):
+    forward_headers = {
+        key: value for key, value in flask.request.headers
+        if key.lower() != 'host'
+    }
+    try:
+        resp = requests.request(
+            method=flask.request.method,
+            url='{}/{}'.format(NEW_API_BASE, subpath),
+            headers=forward_headers,
+            json=flask.request.get_json(silent=True),
+            timeout=10,
+        )
+    except requests.RequestException:
+        return flask.jsonify(error='Automation API unreachable.'), 502
+
+    if subpath == 'admin/dump' and resp.status_code == 200:
+        mark_solved('admin_dump_api')
+
+    return flask.Response(
+        resp.content, status=resp.status_code, content_type=resp.headers.get('Content-Type')
+    )
+
+
 @app.route('/logout')
 def logout():
+    # Preserve visitor_id across the clear - it's what solves are keyed by,
+    # and logging out is a normal step between almost every challenge here
+    # (most need a different account). Without this, session.clear() wiped
+    # it too, silently resetting scoreboard progress on every logout.
+    visitor_id = flask.session.get('visitor_id')
     flask.session.clear()
+    if visitor_id:
+        flask.session['visitor_id'] = visitor_id
     return flask.redirect(flask.url_for('index'))
 
 

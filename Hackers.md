@@ -86,6 +86,17 @@ peek if you're treating this like a challenge).
 - If something signs data with a secret, and that secret is sitting
   somewhere you already have access to for other reasons on this
   project, you don't need to break the signature at all.
+- That script-facing API isn't the only one, and it says so itself if
+  you read what it hands back. A newer one exists. It doesn't have
+  either of the problems above — what it hands back isn't three
+  readable parts, and there's no secret sitting in the source to find.
+- The newer API has one path meant for exactly one account, guarded by
+  something you have to ask for by name before you even know what it's
+  called — the API can tell you, if you ask it the right way and read
+  what it publishes about itself.
+- Once you know what it wants, getting rejected still tells you
+  something, if you're paying attention to more than just the word
+  "no." Not every rejection costs the same.
 
 ## Keeping score
 
